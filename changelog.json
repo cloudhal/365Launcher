@@ -1,8 +1,10 @@
 {
-    "release_date": "2025-11-14",
+    "release_date": "2025-11-25",
     "changes": [
       "Updated Bootstrap to version 5.3.8",
       "Added Refresh button to reload tabs",
-      "Updated app icon"
+      "Updated app icon",
+      "Updated some URLs from office.com to m365.cloud.microsoft",
+      "Improved pattern matching for SharePoint and Lists icons"
     ]
   }

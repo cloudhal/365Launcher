@@ -17,26 +17,28 @@ class IconItem {
   }
 
 // app icons
+// To test pattern matching in a regex tester, replace * with .* and escape forward slashes with \/ e.g. https:\/\/[^.-]+.sharepoint.com\/.*
+// Any time you want to match using a * wildcard, set the type to 'pattern'
 const appIcons = [
   new IconItem("icons/Bookings_50x50.png", "https://outlook.office.com/bookings/", "Bookings", "startsWith"),
   new IconItem("icons/Excel_50x50.png", "https://m365.cloud.microsoft/launch/excel/", "Excel", "startsWith"),
   new IconItem("icons/Copilot_50x50.png", "https://m365.cloud.microsoft/chat", "Copilot", "pattern", ["https://copilot.cloud.microsoft/*","https://m365.cloud.microsoft/chat*"]),
   new IconItem("icons/Fabric_50x50.png", "https://app.fabric.microsoft.com/", "Fabric", "startsWith"),
   new IconItem("icons/Forms_50x50.png", "https://forms.office.com/", "Forms", "startsWith"),
-  new IconItem("icons/Lists_50x50.png", "https://www.office.com/launch/lists/", "Lists", "startsWith"),
+  new IconItem("icons/Lists_50x50.png", "https://m365.cloud.microsoft/launch/lists/", "Lists", "pattern", ["https://*-my.sharepoint.com/personal/*/Lists.aspx?*","https://*.sharepoint.com/sites/*/Lists/*"]),
   new IconItem("icons/Microsoft_Teams_50x50.png", "https://teams.microsoft.com/", "Teams", "startsWith"),
   new IconItem("icons/Microsoft365_50x50.png", "https://m365.cloud.microsoft/?auth=2", "Office", "exact"),
-  new IconItem("icons/OneDrive_50x50.png", "https://www.office.com/launch/onedrive/", "OneDrive", "pattern", ["https://*-my.sharepoint.com/*"]),
-  new IconItem("icons/OneNote_50x50.png", "https://m365.cloud.microsoft/launch/onenote", "OneNote", "startsWith"),
-  new IconItem("icons/Outlook_50x50.png", "https://outlook.office.com/", "Outlook", "startsWith"),
+  new IconItem("icons/OneDrive_50x50.png", "https://m365.cloud.microsoft/launch/onedrive/", "OneDrive", "pattern", ["https://*-my.sharepoint.com/?*","https://*-my.sharepoint.com/shared?*","https://*-my.sharepoint.com/my?*"]),
+  new IconItem("icons/OneNote_50x50.png", "https://m365.cloud.microsoft/launch/onenote/", "OneNote", "startsWith"),
+  new IconItem("icons/Outlook_50x50.png", "https://outlook.office.com/mail", "Outlook", "startsWith"),
   new IconItem("icons/Planner_50x50.png", "https://planner.cloud.microsoft/", "Planner", "startsWith"),
   new IconItem("icons/Power_Apps_50x50.png", "https://make.powerapps.com/", "Power Apps", "startsWith"),
-  new IconItem("icons/Power_Automate_50x50.png", "https://flow.microsoft.com/", "Power Automate", "startsWith"),
+  new IconItem("icons/Power_Automate_50x50.png", "https://make.powerautomate.com/", "Power Automate", "startsWith", ["https://flow.microsoft.com/*"]),
   new IconItem("icons/Copilot_Studio_50x50.png", "https://copilotstudio.microsoft.com/", "Copilot Studio", "startsWith"),
-  new IconItem("icons/PowerPoint_50x50.png", "https://www.office.com/launch/powerpoint/", "PowerPoint", "startsWith"),
+  new IconItem("icons/PowerPoint_50x50.png", "https://m365.cloud.microsoft/launch/powerpoint/", "PowerPoint", "startsWith"),
   new IconItem("icons/Power_BI_50x50.png", "https://app.powerbi.com/", "Power BI", "startsWith"),
   new IconItem("icons/Project_50x50.png", "https://project.microsoft.com/", "Project", "startsWith"),
-  new IconItem("icons/SharePoint_50x50.png", "https://www.office.com/launch/sharepoint/", "SharePoint", "pattern", ["https://[^.-]+\\.sharepoint\\.com/.*"]),
+  new IconItem("icons/SharePoint_50x50.png", "https://m365.cloud.microsoft/launch/sharepoint/", "SharePoint", "pattern", ["https://[^.-]+.sharepoint.com/*"]), // don't match anything with a - in the subdomain
   new IconItem("icons/To_Do_50x50.png", "https://to-do.office.com/", "To Do", "startsWith"),
   new IconItem("icons/Microsoft-Stream_50x50.png", "https://m365.cloud.microsoft/launch/stream", "Stream", "startsWith"),
   new IconItem("icons/Word_50x50.png", "https://m365.cloud.microsoft/launch/word/", "Word", "startsWith"),
@@ -376,7 +378,7 @@ function openOrFocusTab(url, tabs, item) {
 function matchPattern(pattern, url, alternativeLinks = []) {
   // Convert wildcard (*) in the domain portion into a regex-friendly format
   let regexPattern = pattern
-      .replace(/\*/g, '.*') // Replace '*' with '.*', allowing any subdomain
+      .replace(/\*/g, '.*') // Replace '*' with '.*'
       .replace(/\//g, '\\/');  // Escape forward slashes for regex
   const regex = new RegExp(`^${regexPattern}$`);
   // Check primary pattern match
@@ -386,8 +388,8 @@ function matchPattern(pattern, url, alternativeLinks = []) {
   return alternativeLinks.some(alternative => {
     chrome.storage.local.set({ alternativeURL: alternative }); // Save alternative link for debugging
       let altRegexPattern = alternative
-          .replace(/\*/g, '.*') // Allow any subdomain
-          .replace(/\//g, '\\/');  // Escape forward slashes
+          .replace(/\*/g, '.*') // Replace '*' with '.*'
+          .replace(/\//g, '\\/');  // Escape forward slashes for regex
           // chrome.storage.local.set({ url: url }); // Save alternative regex pattern for debugging
           // chrome.storage.local.set({ altRegexPattern: altRegexPattern }); // Save alternative regex pattern for debugging
       // Check if the alternative link matches the URL
