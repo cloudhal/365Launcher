@@ -64,7 +64,7 @@ const adminIcons = [
     new IconItem("icons/Defender_50x50.png", "https://security.microsoft.com/", "Defender", "startsWith"),
     new IconItem("icons/Lighthouse_50x50.png", "https://lighthouse.microsoft.com/", "Lighthouse", "startsWith"),
     new IconItem("icons/SharePoint_50x50.png", "https://admin.microsoft.com/sharepoint", "SharePoint", "pattern", ["https://*-admin.sharepoint.com/*"]),
-    new IconItem("icons/Microsoft_Teams_50x50.png", "https://admin.teams.microsoft.com/dashboard/", "Teams", "startsWith"),
+    new IconItem("icons/Microsoft_Teams_50x50.png", "https://admin.teams.microsoft.com/", "Teams", "startsWith"),
     new IconItem("icons/Engage_50x50.png", "https://engage.cloud.microsoft/main/admin", "Engage", "startsWith"),
     new IconItem("icons/AzureDevops_50x50.png", "https://dev.azure.com/", "DevOps", "startsWith"),
     new IconItem("icons/MicrosoftGraph_50x50.png", "https://developer.microsoft.com/en-us/graph/graph-explorer/", "Graph", "startsWith"),
