@@ -19,6 +19,7 @@ class IconItem {
 // app icons
 // To test pattern matching in a regex tester, replace * with .* and escape forward slashes with \/ e.g. https:\/\/[^.-]+.sharepoint.com\/.*
 // Any time you want to match using a * wildcard, set the type to 'pattern'
+// For icons, if no border is present, resize image to 44px using Photoshop or Photopea, then resize the canvas to 50 px to add some space
 const appIcons = [
   new IconItem("icons/Bookings_50x50.png", "https://outlook.office.com/bookings/", "Bookings", "startsWith"),
   new IconItem("icons/Excel_50x50.png", "https://m365.cloud.microsoft/launch/excel/", "Excel", "startsWith"),
@@ -69,6 +70,7 @@ const adminIcons = [
     new IconItem("icons/AzureDevops_50x50.png", "https://dev.azure.com/", "DevOps", "startsWith"),
     new IconItem("icons/MicrosoftGraph_50x50.png", "https://developer.microsoft.com/en-us/graph/graph-explorer/", "Graph", "startsWith"),
     new IconItem("icons/Office_50x50.png", "https://config.office.com/", "365 Apps", "startsWith"),
+    new IconItem("icons/Foundry_50x50.png", "https://ai.azure.com/", "Foundry", "startsWith"),
 ];
 
 // Get the version from the manifest file and display it. Note that extension needs to be reloaded if you change the manifest.
