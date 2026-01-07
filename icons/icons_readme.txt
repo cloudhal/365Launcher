@@ -1,0 +1,1 @@
+Get the SVG or PNG, resize image to 44px using Photoshop or Photopea, then resize the canvas to 50 px to add some space

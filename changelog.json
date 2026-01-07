@@ -1,6 +1,7 @@
 {
-    "release_date": "2025-12-27",
+    "release_date": "2026-01-07",
     "changes": [
+      "Added Power Pages icon and link",
       "Added Foundry icon and link",
       "Updated Bootstrap to version 5.3.8",
       "Added Refresh button to reload tabs",

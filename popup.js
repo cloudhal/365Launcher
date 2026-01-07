@@ -38,6 +38,7 @@ const appIcons = [
   new IconItem("icons/Copilot_Studio_50x50.png", "https://copilotstudio.microsoft.com/", "Copilot Studio", "startsWith"),
   new IconItem("icons/PowerPoint_50x50.png", "https://m365.cloud.microsoft/launch/powerpoint/", "PowerPoint", "startsWith"),
   new IconItem("icons/Power_BI_50x50.png", "https://app.powerbi.com/", "Power BI", "startsWith"),
+  new IconItem("icons/Power_Pages_50x50.png", "https://make.powerpages.microsoft.com/", "Power Pages", "startsWith"),
   new IconItem("icons/Project_50x50.png", "https://project.microsoft.com/", "Project", "startsWith"),
   new IconItem("icons/SharePoint_50x50.png", "https://m365.cloud.microsoft/launch/sharepoint/", "SharePoint", "pattern", ["https://[^.-]+.sharepoint.com/*"]), // don't match anything with a - in the subdomain
   new IconItem("icons/To_Do_50x50.png", "https://to-do.office.com/", "To Do", "startsWith"),
