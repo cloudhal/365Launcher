@@ -1,8 +1,11 @@
 /*
+ * Copyright © 2026 Cloudrun Ltd
+ * 
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
 class IconItem {
     constructor(image, link, text, matchType, alternativeLinks = []) {
       if (!image || !link || !text || !matchType) {
@@ -55,12 +58,12 @@ const appIcons = [
 
 // admin icons
 const adminIcons = [
-    new IconItem("icons/Microsoft365_50x50.png", "https://admin.cloud.microsoft/", "365 Admin", "startsWith"),
+    new IconItem("icons/Microsoft365_50x50.png", "https://admin.cloud.microsoft/#", "365 Admin", "startsWith"),
     new IconItem("icons/EntraID_50x50.png", "https://entra.microsoft.com/", "Entra", "startsWith"),
     new IconItem("icons/Azure_50x50.png", "https://portal.azure.com/", "Azure", "startsWith"),
     new IconItem("icons/Purview_50x50.png", "https://purview.microsoft.com/", "Purview", "startsWith"),
     new IconItem("icons/Intune_50x50.png", "https://intune.microsoft.com/", "Intune", "startsWith"),
-    new IconItem("icons/Exchange_50x50.png", "https://admin.exchange.microsoft.com/", "Exchange", "startsWith"),
+    new IconItem("icons/Exchange_50x50.png", "https://admin.cloud.microsoft/exchange", "Exchange", "startsWith"),
     new IconItem("icons/PowerPlatform_50x50.png", "https://admin.powerplatform.microsoft.com/", "Power Platform", "startsWith"),
     new IconItem("icons/Fabric_50x50.png", "https://app.fabric.microsoft.com/admin-portal/tenantSettings?experience=fabric-developer/", "Fabric", "startsWith"),
     new IconItem("icons/Defender_50x50.png", "https://security.microsoft.com/", "Defender", "startsWith"),

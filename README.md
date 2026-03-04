@@ -59,7 +59,9 @@ If you'd like to contribute or make improvements:
 
 ## License
 
-This project is licensed under the Mozilla Public License (MPL).
+Copyright © 2026 Cloudrun Ltd
+
+This project is licensed under the Mozilla Public License (MPL), v. 2.0
 
 ## Acknowledgments
 
