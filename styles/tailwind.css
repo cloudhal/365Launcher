@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply m-0 min-w-[660px] bg-slate-50 text-slate-900 antialiased transition-colors duration-200;
+  }
+
+  :root[data-theme="dark"] body {
+    @apply bg-slate-950 text-slate-100;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .panel-button {
+    @apply inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2;
+  }
+
+  :root[data-theme="dark"] .panel-button {
+    @apply border-slate-700 bg-slate-900 text-sky-200 hover:border-slate-600 hover:bg-slate-800 focus:ring-offset-slate-950;
+  }
+
+  .panel-button-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2;
+  }
+
+  :root[data-theme="dark"] .panel-button-secondary {
+    @apply border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 focus:ring-offset-slate-950;
+  }
+
+  .panel-select {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400;
+  }
+
+  :root[data-theme="dark"] .panel-select {
+    @apply border-slate-700 bg-slate-900 text-slate-100 focus:border-sky-400;
+  }
+
+  .modal-shell {
+    @apply fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm;
+  }
+
+  .modal-shell[data-open="true"] {
+    @apply flex;
+  }
+
+  .app-icon {
+    @apply block rounded-2xl border border-slate-200/60 bg-white/40 px-1 py-1 no-underline transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-sky-400
+           dark:border-slate-700/50 dark:bg-slate-800/30;
+  }
+
+  .app-icon:hover {
+    @apply border-sky-300/70 bg-white shadow-[0_0_12px_2px_rgba(56,189,248,0.25)]
+           dark:border-sky-500/60 dark:bg-slate-800/70 dark:shadow-[0_0_14px_3px_rgba(56,189,248,0.18)];
+  }
+
+  .icon-item {
+    @apply flex h-[87px] flex-col items-center justify-start rounded-xl px-1.5 pb-1.5 pt-2 text-center;
+  }
+
+  .top-toggle {
+    @apply inline-flex items-center gap-1.5 rounded-xl border border-slate-200/70 bg-white/60 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200
+           hover:border-sky-300/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400
+           dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:border-sky-500/50 dark:hover:bg-slate-800;
+  }
+
+  .top-toggle[aria-pressed="true"] {
+    @apply border-sky-300/80 bg-sky-100/80 text-sky-800 shadow-[0_0_10px_1px_rgba(56,189,248,0.18)]
+           dark:border-sky-500/60 dark:bg-sky-500/15 dark:text-sky-100 dark:shadow-[0_0_12px_2px_rgba(56,189,248,0.16)];
+  }
+
+  .top-icon-button {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition
+           hover:border-sky-300 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400
+           dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:border-sky-400 dark:hover:text-sky-200;
+  }
+
+  .top-search-shell {
+    @apply relative ml-auto;
+  }
+
+  .top-search-icon {
+    @apply pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500;
+  }
+
+  .top-search {
+    @apply w-44 rounded-xl border border-slate-200/70 bg-white/70 py-1.5 pl-8 pr-3 text-sm text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400
+           hover:border-sky-300/70 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-400
+           dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-100 dark:placeholder:text-slate-400 dark:hover:border-sky-500/50 dark:focus:border-sky-500/60;
+  }
+}

@@ -106,6 +106,119 @@ fetch(chrome.runtime.getURL("changelog.json"))
   });
 // Debug mode
 let debugMode;
+let activeSearchText = '';
+
+function setResolvedTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+}
+
+function applyTheme(theme) {
+  let resolvedTheme = theme;
+
+  if (theme === 'system') {
+    resolvedTheme =
+      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+  }
+
+  setResolvedTheme(resolvedTheme);
+  console.log(`🌗 Applied theme: ${resolvedTheme}`);
+}
+
+function createModalController(modalId) {
+  const modal = document.getElementById(modalId);
+  let lastFocusedElement = null;
+
+  const getFocusableElements = () => {
+    const selectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'textarea:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])'
+    ];
+
+    return [...modal.querySelectorAll(selectors.join(','))]
+      .filter(element => element.offsetParent !== null || element === document.activeElement);
+  };
+
+  const closeModal = () => {
+    modal.dataset.open = 'false';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      lastFocusedElement.focus();
+    }
+  };
+
+  const openModal = (triggerElement = document.activeElement) => {
+    lastFocusedElement = triggerElement;
+    modal.dataset.open = 'true';
+    modal.setAttribute('aria-hidden', 'false');
+
+    const [firstFocusable] = getFocusableElements();
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  };
+
+  modal.querySelectorAll('[data-close-modal]').forEach(button => {
+    button.addEventListener('click', closeModal);
+  });
+
+  modal.addEventListener('click', event => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  modal.addEventListener('keydown', event => {
+    if (event.key !== 'Tab' || modal.dataset.open !== 'true') {
+      return;
+    }
+
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length === 0) {
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  });
+
+  modal.__closeModal = closeModal;
+
+  return { openModal, closeModal };
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  const openModals = [...document.querySelectorAll('.modal-shell[data-open="true"]')];
+  const activeModal = openModals[openModals.length - 1];
+
+  if (!activeModal) {
+    return;
+  }
+
+  event.preventDefault();
+  if (typeof activeModal.__closeModal === 'function') {
+    activeModal.__closeModal();
+  }
+});
 
 // Function to log events based on debug mode setting, uses message as key name if not set
 function logEvent(keyOrMessage, message) {
@@ -122,29 +235,87 @@ function logEvent(keyOrMessage, message) {
   }
 }
 
-// Main DOM Content Load, there should be only one
+// Main DOM Content Load, there can be only one!
 document.addEventListener('DOMContentLoaded', () => {
-  showAppsPage(); // Show apps page
-  showAdminPage(); // Show admin page
   togglePages(); // Toggle between apps and admin pages
-  initializeTabMode(); // Initialize tab mode
+  setupSearchFilter();
+  renderFilteredPages();
+  focusSearchInput();
   showAboutModal();
   showSettingsModal();
 });
 
-function showAppsPage() { // Show apps HTML
+function getFilteredIcons(iconSet, searchText = '') {
+    const query = searchText.trim().toLowerCase();
+    const sortedIcons = [...iconSet].sort((a, b) => a.text.localeCompare(b.text));
+
+    if (!query) {
+      return sortedIcons;
+    }
+
+    return sortedIcons.filter(icon => icon.text.toLowerCase().includes(query));
+}
+
+function renderFilteredPages() {
+  showAppsPage(activeSearchText); // Show apps page
+  showAdminPage(activeSearchText); // Show admin page
+  announceSearchResults();
+  initializeTabMode(); // Initialize tab mode for newly rendered icons
+}
+
+function announceSearchResults() {
+  const statusElement = document.getElementById('search-status');
+  if (!statusElement) {
+    return;
+  }
+
+  const appsCount = getFilteredIcons(appIcons, activeSearchText).length;
+  const adminCount = getFilteredIcons(adminIcons, activeSearchText).length;
+  statusElement.textContent = `${appsCount} apps and ${adminCount} admin apps found`;
+}
+
+function setupSearchFilter() {
+  const searchInput = document.getElementById('icon-search');
+
+  searchInput.addEventListener('input', event => {
+    activeSearchText = event.target.value;
+    renderFilteredPages();
+  });
+}
+
+function focusSearchInput() {
+  const searchInput = document.getElementById('icon-search');
+  requestAnimationFrame(() => {
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+  });
+}
+
+function renderEmptyState(container, label) {
+  const emptyState = document.createElement('div');
+  emptyState.className = 'col-span-full rounded-xl border border-slate-200/70 bg-white/60 px-3 py-6 text-center text-xs font-medium text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300';
+  emptyState.textContent = `No ${label} found`;
+  container.appendChild(emptyState);
+}
+
+function showAppsPage(searchText = '') { // Show apps HTML
     const appsPage = document.getElementById('apps-page');
     const fragment = document.createDocumentFragment();
+    const filteredIcons = getFilteredIcons(appIcons, searchText);
 
-    // Sort the list of appIcons
-    appIcons.sort((a, b) => a.text.localeCompare(b.text));
+    appsPage.innerHTML = '';
 
-    appIcons.forEach(icon => {
+    if (filteredIcons.length === 0) {
+      renderEmptyState(appsPage, 'apps');
+      return;
+    }
+
+    filteredIcons.forEach(icon => {
       const iconHTML = `
-      <a href="${icon.link}" target="_blank" class="text-decoration-none app-icon">
-        <div class="icon-item text-center">
-          <img src="${icon.image}" alt="${icon.text}" class="img-fluid">
-          <p class="text-body">${icon.text}</p>
+      <a href="${icon.link}" target="_blank" class="app-icon">
+        <div class="icon-item">
+          <img src="${icon.image}" alt="${icon.text}" class="h-auto max-w-[35px]">
+          <p class="mt-2 line-clamp-2 text-[11px] font-medium text-slate-700 dark:text-slate-200">${icon.text}</p>
         </div>
       </a>`;
         const tempDiv = document.createElement('div');
@@ -154,19 +325,24 @@ function showAppsPage() { // Show apps HTML
     appsPage.appendChild(fragment); // Append all icons at once for better performance
 }
 
-function showAdminPage() { // Show admin HTML
+  function showAdminPage(searchText = '') { // Show admin HTML
     const adminPage = document.getElementById('admin-page');
     const fragment = document.createDocumentFragment();
+    const filteredIcons = getFilteredIcons(adminIcons, searchText);
 
-    // Sort the list of adminIcons
-    adminIcons.sort((a, b) => a.text.localeCompare(b.text));
+    adminPage.innerHTML = '';
 
-    adminIcons.forEach(icon => {
+    if (filteredIcons.length === 0) {
+      renderEmptyState(adminPage, 'admin apps');
+      return;
+    }
+
+    filteredIcons.forEach(icon => {
       const iconHTML = `
-      <a href="${icon.link}" target="_blank" class="text-decoration-none app-icon">
-        <div class="icon-item text-center">
-          <img src="${icon.image}" alt="${icon.text}" class="img-fluid">
-          <p class="text-body">${icon.text}</p>
+      <a href="${icon.link}" target="_blank" class="app-icon">
+        <div class="icon-item">
+          <img src="${icon.image}" alt="${icon.text}" class="h-auto max-w-[35px]">
+          <p class="mt-2 line-clamp-2 text-[11px] font-medium text-slate-700 dark:text-slate-200">${icon.text}</p>
         </div>
       </a>`;
         const tempDiv = document.createElement('div');
@@ -180,37 +356,46 @@ function togglePages() { // Toggle button to switch between Apps and Admin pages
 
   // Get HTML elements for the switch button and pages
     const switchButton = document.getElementById('switch-btn');
-    const switchLabel = document.querySelector('label[for="switch-btn"]');
+    const switchIconPath = document.getElementById('switch-icon-path');
+    const switchLabel = document.getElementById('switch-label');
     const refreshButton = document.getElementById('refresh-btn');
     const appsPage = document.getElementById('apps-page');
     const adminPage = document.getElementById('admin-page');
+    const appsIconPath = 'M4.5 4.5h6v6h-6zm9 0h6v6h-6zm-9 9h6v6h-6zm9 0h6v6h-6z';
+    const adminIconPath = 'M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z';
+    const setPressedState = (button, isPressed) => {
+      button.setAttribute('aria-pressed', String(isPressed));
+    };
   
   // Load the switch state from chrome.storage
   chrome.storage.sync.get(["switchState", "debugMode", "refreshState"], (data) => {
     const switchState = data.switchState || false; // Default to false if not set
     const refreshState = data.refreshState || false; // Default to false if not set
-    switchButton.checked = switchState;
-    refreshButton.checked = refreshState; // Set the refresh button state
+    setPressedState(switchButton, switchState);
+    setPressedState(refreshButton, refreshState); // Set the refresh button state
     debugMode = data.debugMode || false;
     updatePages(switchState); // Update pages based on state
   });
 
     // Update pages based on the switch state
     const updatePages = (isAdmin) => {
+      setPressedState(switchButton, isAdmin);
       if (isAdmin) {
         appsPage.classList.add('hidden');
         adminPage.classList.remove('hidden');
         switchLabel.textContent = 'Admin';
+        switchIconPath.setAttribute('d', adminIconPath);
       } else {
         adminPage.classList.add('hidden');
         appsPage.classList.remove('hidden');
         switchLabel.textContent = 'Apps';
+        switchIconPath.setAttribute('d', appsIconPath);
       }
     };
   
     // Save switch state when toggled
-    switchButton.addEventListener('change', () => {
-      const isAdmin = switchButton.checked;
+    switchButton.addEventListener('click', () => {
+      const isAdmin = switchButton.getAttribute('aria-pressed') !== 'true';
       chrome.storage.sync.set({ switchState: isAdmin }, () => {
         logEvent(`Admin switch state: ${isAdmin}`);
       });
@@ -218,12 +403,17 @@ function togglePages() { // Toggle button to switch between Apps and Admin pages
     });
 
     // Save refresh switch state when toggled
-    refreshButton.addEventListener('change', () => {
-      const isRefresh = refreshButton.checked;
+    refreshButton.addEventListener('click', () => {
+      const isRefresh = refreshButton.getAttribute('aria-pressed') !== 'true';
+      setPressedState(refreshButton, isRefresh);
       chrome.storage.sync.set({ refreshState: isRefresh }, () => {
         logEvent(`Refresh switch state: ${isRefresh}`);
       });
     });
+}
+
+function isRefreshEnabled() {
+  return document.getElementById('refresh-btn').getAttribute('aria-pressed') === 'true';
 }
 
 function initializeTabMode() { // Initialize tab mode
@@ -318,10 +508,9 @@ function createNewTab(url) {
   chrome.tabs.create({ url: url }, (tab) => {
     chrome.storage.local.set({ myTabId: tab.id });
     logEvent(`Created new tab with ID: ${tab.id}`);
-  });
-  // focus the tab
-  chrome.tabs.update(tab.id, { active: true }, () => {
-    logEvent(`Focused new tab: ${tab.id}`);
+    chrome.tabs.update(tab.id, { active: true }, () => {
+      logEvent(`Focused new tab: ${tab.id}`);
+    });
   });
 }
 
@@ -334,7 +523,7 @@ function openOrFocusTab(url, tabs, item) {
       logEvent(`Found matching tab using exact match`);
       chrome.tabs.update(existingTab.id, { active: true });
       // if isRefresh is true, refresh the tab
-      if (document.getElementById('refresh-btn').checked) {
+        if (isRefreshEnabled()) {
           chrome.tabs.reload(existingTab.id, () => {
               logEvent(`Refreshed tab for link: ${item.link}`);
           });
@@ -351,7 +540,7 @@ function openOrFocusTab(url, tabs, item) {
       logEvent(`Found matching tab using startsWith`);
       chrome.tabs.update(existingTab.id, { active: true });
             // if isRefresh is true, refresh the tab
-      if (document.getElementById('refresh-btn').checked) {
+        if (isRefreshEnabled()) {
           chrome.tabs.reload(existingTab.id, () => {
               logEvent(`Refreshed tab for link: ${item.link}`);
           });
@@ -367,7 +556,7 @@ function openOrFocusTab(url, tabs, item) {
       logEvent(`Found matching tab using pattern match`);
       chrome.tabs.update(existingTab.id, { active: true });
             // if isRefresh is true, refresh the tab
-      if (document.getElementById('refresh-btn').checked) {
+        if (isRefreshEnabled()) {
           chrome.tabs.reload(existingTab.id, () => {
               logEvent(`Refreshed tab for link: ${item.link}`);
           });
@@ -407,21 +596,25 @@ function matchPattern(pattern, url, alternativeLinks = []) {
   // About modal
 function showAboutModal() {
   const aboutIcon = document.getElementById('about-icon');
-  const aboutModal = new bootstrap.Modal(document.getElementById('about-modal'));
+  const aboutModal = createModalController('about-modal');
   const logoDark = document.getElementById('logo-dark');
   const logoLight = document.getElementById('logo-light');
-     // Show about modal on click
+
+  const updateLogos = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+
+    if (currentTheme === 'dark') {
+      logoDark.classList.add('hidden');
+      logoLight.classList.remove('hidden');
+    } else {
+      logoDark.classList.remove('hidden');
+      logoLight.classList.add('hidden');
+    }
+  };
+
   aboutIcon.addEventListener('click', () => {
-  aboutModal.show();
-  // Check the current theme
-  const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-  if (currentTheme === 'dark') {
-      logoDark.style.display = 'none';
-      logoLight.style.display = 'block';
-  } else {
-      logoDark.style.display = 'block';
-      logoLight.style.display = 'none';
-  }
+    updateLogos();
+    aboutModal.openModal(aboutIcon);
   });
 }
 
@@ -455,22 +648,33 @@ document.querySelectorAll('.share-btn').forEach(btn => {
 
 // Settings modal
 function showSettingsModal() {
-
-
     const settingsIcon = document.getElementById('settings-icon');
-    const settingsModal = new bootstrap.Modal(document.getElementById('settings-modal'));
+    const settingsModal = createModalController('settings-modal');
     const saveSettings = document.getElementById('save-settings');
     const themeSelect = document.getElementById('theme');
     const tabModeSelect = document.getElementById('tab-mode');
     const debugModeToggle = document.getElementById('debug-mode');
 
-   // Show settings modal on click
+    const DEFAULT_SETTINGS = {
+      theme: 'system',
+      debugMode: false,
+      tabMode: 'individual'
+    };
+
+    const loadSettings = () => {
+      chrome.storage.sync.get(DEFAULT_SETTINGS, data => {
+        themeSelect.value = data.theme;
+        tabModeSelect.value = data.tabMode;
+        debugModeToggle.checked = data.debugMode;
+        applyTheme(data.theme);
+      });
+    };
+
     settingsIcon.addEventListener('click', () => {
-    settingsModal.show();
-});
+      loadSettings();
+      settingsModal.openModal(settingsIcon);
+    });
 
-
-    // Save settings to Chrome storage
     saveSettings.addEventListener('click', () => {
       const tabMode = tabModeSelect.value;  
       const theme = themeSelect.value;
@@ -484,42 +688,10 @@ function showSettingsModal() {
         chrome.storage.sync.set({ theme, debugMode, tabMode }, () => {
             console.log("✅ Settings saved:", { theme, debugMode, tabMode });
             applyTheme(theme); // Apply theme immediately
-            settingsModal.hide(); // Hide the modal after saving
+            settingsModal.closeModal();
         });
     });
 
-    // Add Default Settings: Provide defaults to avoid undefined checks
-    const DEFAULT_SETTINGS = {
-      theme: "system",
-      debugMode: false,
-      tabMode: "individual"
-  };
-  
-  chrome.storage.sync.get(DEFAULT_SETTINGS, (data) => {
-      // data will always have all properties
-  });
-
-    // Load settings when settings modal is opened
-    chrome.storage.sync.get(DEFAULT_SETTINGS, (data) => {
-      themeSelect.value = data.theme;
-      tabModeSelect.value = data.tabMode;
-      debugModeToggle.checked = data.debugMode;
-      applyTheme(data.theme);
-    });
-
-    function applyTheme(theme) {
-      if (theme === "system") {
-          // Detect system theme preference
-          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-              document.documentElement.setAttribute('data-bs-theme', 'dark');
-          } else {
-              document.documentElement.setAttribute('data-bs-theme', 'light');
-          }
-      } else {
-          // Apply user-selected theme
-          document.documentElement.setAttribute('data-bs-theme', theme);
-      }
-      console.log(`🌗 Applied theme: ${theme}`);
-  }
+    loadSettings();
 };
 
