@@ -220,6 +220,92 @@ document.addEventListener('keydown', event => {
   }
 });
 
+function setupKeyboardShortcuts() {
+  const searchInput = document.getElementById('icon-search');
+
+  function getVisibleIcons() {
+    // Return only icons in the currently visible page
+    const appsPage = document.getElementById('apps-page');
+    const adminPage = document.getElementById('admin-page');
+    const activePage = adminPage.classList.contains('hidden') ? appsPage : adminPage;
+    return [...activePage.querySelectorAll('.app-icon')];
+  }
+
+  function isModalOpen() {
+    return document.querySelector('.modal-shell[data-open="true"]') !== null;
+  }
+
+  function isTypingTarget(element) {
+    const tag = element.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable;
+  }
+
+  document.addEventListener('keydown', event => {
+    if (isModalOpen()) {
+      return;
+    }
+
+    const { key, ctrlKey, metaKey, shiftKey } = event;
+
+    // `/` or `Ctrl+K` / `Cmd+K` — focus search
+    if ((key === '/' || ((ctrlKey || metaKey) && key === 'k')) && !isTypingTarget(document.activeElement)) {
+      event.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+      return;
+    }
+
+    // `Escape` in search — clear and re-render
+    if (key === 'Escape' && document.activeElement === searchInput) {
+      event.preventDefault();
+      searchInput.value = '';
+      activeSearchText = '';
+      renderFilteredPages();
+      searchInput.focus();
+      return;
+    }
+
+    // Arrow keys — navigate tiles (also move focus out of search if needed)
+    if (key === 'ArrowRight' || key === 'ArrowLeft' || key === 'ArrowDown' || key === 'ArrowUp') {
+      const icons = getVisibleIcons();
+      if (icons.length === 0) return;
+
+      const currentIndex = icons.indexOf(document.activeElement);
+
+      // If focus is not on a tile yet, move to first tile on any arrow key
+      if (currentIndex === -1) {
+        event.preventDefault();
+        icons[0].focus();
+        return;
+      }
+
+      const cols = 6;
+      let nextIndex = currentIndex;
+
+      if (key === 'ArrowRight') nextIndex = currentIndex + 1;
+      else if (key === 'ArrowLeft') nextIndex = currentIndex - 1;
+      else if (key === 'ArrowDown') nextIndex = currentIndex + cols;
+      else if (key === 'ArrowUp') nextIndex = currentIndex - cols;
+
+      if (nextIndex >= 0 && nextIndex < icons.length) {
+        event.preventDefault();
+        icons[nextIndex].focus();
+      }
+      return;
+    }
+
+    // `Enter` — open first visible icon (only when focus is on search or no interactive element)
+    if (key === 'Enter' && document.activeElement === searchInput) {
+      const icons = getVisibleIcons();
+      if (icons.length > 0) {
+        event.preventDefault();
+        icons[0].click();
+      }
+      return;
+    }
+  });
+}
+
 // Function to log events based on debug mode setting, uses message as key name if not set
 function logEvent(keyOrMessage, message) {
   if (debugMode) {
@@ -243,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
   focusSearchInput();
   showAboutModal();
   showSettingsModal();
+  setupKeyboardShortcuts();
 });
 
 function getFilteredIcons(iconSet, searchText = '') {

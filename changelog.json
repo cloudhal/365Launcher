@@ -1,6 +1,7 @@
 {
-    "release_date": "2026-05-07",
+    "release_date": "2026-05-11",
     "changes": [
-      "Updated to use tailwind.css for styling. Added search feature."
+      "Updated to use tailwind.css for styling. Added search feature.",
+      "Added keyboard shortcuts."
     ]
   }
