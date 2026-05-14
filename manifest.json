@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "365 Launcher X",
+    "name": "365 Launch",
     "version": "2.0.2",
     "description": "A compact Microsoft 365 launcher for apps and admin portals. Find tools quickly, reduce tab clutter, and switch modes to match your workflow.",
     "action": {
