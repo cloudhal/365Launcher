@@ -52,8 +52,8 @@ const appIcons = [
   new IconItem("icons/Visio_50x50.png", "https://m365.cloud.microsoft/launch/visio", "Visio", "startsWith"),
   new IconItem("icons/Viva_50x50.png", "https://viva.cloud.microsoft/", "Viva", "startsWith"),
   new IconItem("icons/Designer_50x50.png", "https://designer.microsoft.com/", "Designer", "startsWith"),
-  new IconItem("icons/Clipchamp_50x50.png", "https://www.office.com/launch/clipchamp?auth=2/", "Clipchamp", "startsWith")
-
+  new IconItem("icons/Clipchamp_50x50.png", "https://www.office.com/launch/clipchamp?auth=2/", "Clipchamp", "startsWith"),
+  new IconItem("icons/Windows_50x50.png", "https://windows.cloud.microsoft/", "Windows app", "startsWith")
 ];
 
 // admin icons
