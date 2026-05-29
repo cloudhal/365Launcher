@@ -1,6 +1,7 @@
 {
     "release_date": "2026-05-11",
     "changes": [
+      "Updated app icons.",
       "Added Windows app tile.",
       "Updated to use tailwind.css for styling. Added search feature.",
       "Added keyboard shortcuts.",

@@ -1,4 +1,4 @@
-# 365 Launcher X
+# 365 Launcher
 
 A lightweight, compact, launcher for Microsoft 365 apps and admin portals. Features different tab modes to minimise open tabs.
 
@@ -17,7 +17,7 @@ A lightweight, compact, launcher for Microsoft 365 apps and admin portals. Featu
 
 ## Usage
 
-- Click on the 365 Launcher X icon in the Chrome toolbar.
+- Click on the 365 Launcher icon in the Chrome toolbar.
 - Use the **Apps/Admin** toggle to switch between app shortcuts and admin portals.
 - The launcher is responsive and adapts to your current browser theme (light or dark mode).
 
