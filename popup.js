@@ -30,11 +30,11 @@ const appIcons = [
   new IconItem("icons/Fabric_50x50.png", "https://app.fabric.microsoft.com/", "Fabric", "startsWith"),
   new IconItem("icons/Forms_50x50.png", "https://forms.office.com/", "Forms", "startsWith"),
   new IconItem("icons/Lists_50x50.png", "https://m365.cloud.microsoft/launch/lists/", "Lists", "pattern", ["https://*-my.sharepoint.com/personal/*/Lists.aspx?*","https://*.sharepoint.com/sites/*/Lists/*"]),
-  new IconItem("icons/Microsoft_Teams_50x50.png", "https://teams.microsoft.com/", "Teams", "startsWith"),
+  new IconItem("icons/Microsoft_Teams_50x50.png", "https://teams.cloud.microsoft/", "Teams", "startsWith"),
   new IconItem("icons/Microsoft365_50x50.png", "https://m365.cloud.microsoft/?auth=2", "Office", "exact"),
   new IconItem("icons/OneDrive_50x50.png", "https://m365.cloud.microsoft/launch/onedrive/", "OneDrive", "pattern", ["https://*-my.sharepoint.com/?*","https://*-my.sharepoint.com/shared?*","https://*-my.sharepoint.com/my?*"]),
   new IconItem("icons/OneNote_50x50.png", "https://m365.cloud.microsoft/launch/onenote/", "OneNote", "startsWith"),
-  new IconItem("icons/Outlook_50x50.png", "https://outlook.office.com/mail", "Outlook", "startsWith"),
+  new IconItem("icons/Outlook_50x50.png", "https://outlook.cloud.microsoft/mail", "Outlook", "startsWith"),
   new IconItem("icons/Planner_50x50.png", "https://planner.cloud.microsoft/", "Planner", "startsWith"),
   new IconItem("icons/Power_Apps_50x50.png", "https://make.powerapps.com/", "Power Apps", "startsWith"),
   new IconItem("icons/Power_Automate_50x50.png", "https://make.powerautomate.com/", "Power Automate", "startsWith", ["https://flow.microsoft.com/*"]),
@@ -52,7 +52,7 @@ const appIcons = [
   new IconItem("icons/Visio_50x50.png", "https://m365.cloud.microsoft/launch/visio", "Visio", "startsWith"),
   new IconItem("icons/Viva_50x50.png", "https://viva.cloud.microsoft/", "Viva", "startsWith"),
   new IconItem("icons/Designer_50x50.png", "https://designer.microsoft.com/", "Designer", "startsWith"),
-  new IconItem("icons/Clipchamp_50x50.png", "https://www.office.com/launch/clipchamp?auth=2/", "Clipchamp", "startsWith"),
+  new IconItem("icons/Clipchamp_50x50.png", "https://www.office.com/launch/clipchamp?auth=2/", "Clipchamp", "pattern", ["https:\/\/[^.-]+.sharepoint.com\/[^.-]+\/videohub.aspx", "https:\/\/[^.-]+.sharepoint.com\/[^.-]+\/videoeditor.aspx"]), // match clipchamp launch page or video hub in sharepoint
   new IconItem("icons/Windows_50x50.png", "https://windows.cloud.microsoft/", "Windows app", "startsWith")
 ];
 
