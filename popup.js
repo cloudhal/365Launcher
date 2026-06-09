@@ -306,6 +306,25 @@ function setupKeyboardShortcuts() {
   });
 }
 
+// Setup status bar to show URLs on hover
+function setupStatusBar() {
+  const statusBar = document.getElementById('status-bar');
+
+  document.body.addEventListener('mouseover', event => {
+    const link = event.target.closest('a[href]');
+    if (link && link.href && !link.href.startsWith('#')) {
+      statusBar.textContent = link.href;
+    }
+  });
+
+  document.body.addEventListener('mouseout', event => {
+    const link = event.target.closest('a[href]');
+    if (link && link.href && !link.href.startsWith('#')) {
+      statusBar.textContent = '';
+    }
+  });
+}
+
 // Function to log events based on debug mode setting, uses message as key name if not set
 function logEvent(keyOrMessage, message) {
   if (debugMode) {
@@ -330,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
   showAboutModal();
   showSettingsModal();
   setupKeyboardShortcuts();
+  setupStatusBar();
 });
 
 function getFilteredIcons(iconSet, searchText = '') {

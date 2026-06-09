@@ -1,6 +1,9 @@
 {
     "release_date": "2026-05-11",
     "changes": [
+      "2.1.0:",
+      "Added status bar to show URLs on hover.",
+      "Previous:",
       "Updated Outlook, Clipchamp links due to MS URL update.",
       "Updated app icons.",
       "Added Windows app tile.",

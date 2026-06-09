@@ -104,4 +104,12 @@
            hover:border-sky-300/70 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-400
            dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-100 dark:placeholder:text-slate-400 dark:hover:border-sky-500/50 dark:focus:border-sky-500/60;
   }
+
+  .status-bar {
+    @apply sticky bottom-0 z-30 flex h-6 items-center border-t border-slate-200/70 bg-slate-100/90 px-2 text-[11px] font-medium text-slate-700 backdrop-blur-sm;
+  }
+
+  :root[data-theme="dark"] .status-bar {
+    @apply border-slate-700/60 bg-slate-900/90 text-slate-400;
+  }
 }
