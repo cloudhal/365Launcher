@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'sync' && Object.keys(changes).some(CustomTiles.isTileKey)) {
+  if (area === 'sync' && Object.keys(changes).some(CustomTiles.isConfigKey)) {
     CustomTiles.loadCustomTiles()
       .then(renderFilteredPages)
       .catch(error => console.error('Refreshing custom tiles failed', error));
@@ -222,9 +222,13 @@ function renderFilteredPages() {
   initializeTabMode(); // Initialize tab mode for newly rendered icons
 }
 
-// Custom tiles come first so a user's own tile wins over a built-in with the same link.
+// Custom tiles come first so a user's own tile wins over a built-in with the same link. Built-ins the
+// user hid in the options page are left out of rendering, search and keyboard navigation alike.
 function getAllIcons(page) {
-  return [...CustomTiles.getCustomTiles(page), ...(page === 'admin' ? adminIcons : appIcons)];
+  const builtins = (page === 'admin' ? adminIcons : appIcons)
+    .filter(icon => !CustomTiles.isBuiltinHidden(page, icon.link));
+
+  return [...CustomTiles.getCustomTiles(page), ...builtins];
 }
 
 function announceSearchResults() {
@@ -664,8 +668,15 @@ function showSettingsModal() {
     };
 
     const updateCustomTileCount = () => {
-      const count = CustomTiles.getCustomTiles().length;
-      customTileCount.textContent = count === 1 ? '1 tile' : `${count} tiles`;
+      const custom = CustomTiles.getCustomTiles().length;
+      const hidden = CustomTiles.getHiddenBuiltins().length;
+      const parts = [custom === 1 ? '1 custom' : `${custom} custom`];
+
+      if (hidden > 0) {
+        parts.push(`${hidden} hidden`);
+      }
+
+      customTileCount.textContent = parts.join(' · ');
     };
 
     manageTilesButton.addEventListener('click', () => {

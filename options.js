@@ -155,6 +155,85 @@ function renderList() {
   list.appendChild(fragment);
 }
 
+function updateHiddenSummary() {
+  const hidden = CustomTiles.getHiddenBuiltins().length;
+  const summary = document.getElementById("hidden-summary");
+  const showAll = document.getElementById("show-all-tiles");
+
+  summary.textContent = hidden === 0
+    ? "All built-in tiles are shown"
+    : `${hidden} hidden`;
+  showAll.disabled = hidden === 0;
+}
+
+function syncBuiltinCheckboxes() {
+  document.querySelectorAll("#builtin-groups input[type=checkbox]").forEach(checkbox => {
+    const hidden = CustomTiles.isBuiltinHidden(checkbox.dataset.page, checkbox.dataset.link);
+
+    checkbox.checked = !hidden;
+    checkbox.closest("label").classList.toggle("opacity-50", hidden);
+  });
+
+  updateHiddenSummary();
+}
+
+function buildBuiltinToggle(page, icon) {
+  const label = document.createElement("label");
+  label.className = "flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.className = "h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:focus:ring-sky-400";
+  checkbox.dataset.page = page;
+  checkbox.dataset.link = icon.link;
+  checkbox.addEventListener("change", async () => {
+    await CustomTiles.setBuiltinHidden(page, icon.link, !checkbox.checked);
+    syncBuiltinCheckboxes();
+  });
+
+  const image = document.createElement("img");
+  image.src = icon.image;
+  image.alt = "";
+  image.className = "h-5 w-5 shrink-0";
+
+  const text = document.createElement("span");
+  text.className = "truncate";
+  text.textContent = icon.text;
+
+  label.append(checkbox, image, text);
+
+  return label;
+}
+
+function renderBuiltins() {
+  const container = document.getElementById("builtin-groups");
+
+  container.innerHTML = "";
+
+  [["apps", "Apps", appIcons], ["admin", "Admin", adminIcons]].forEach(([page, title, icons]) => {
+    const group = document.createElement("div");
+
+    const heading = document.createElement("h3");
+    heading.className = "text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400";
+    heading.textContent = title;
+
+    const grid = document.createElement("div");
+    grid.className = "mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3";
+
+    icons.forEach(icon => grid.appendChild(buildBuiltinToggle(page, icon)));
+
+    group.append(heading, grid);
+    container.appendChild(group);
+  });
+
+  syncBuiltinCheckboxes();
+}
+
+document.getElementById("show-all-tiles").addEventListener("click", async () => {
+  await CustomTiles.showAllBuiltins();
+  syncBuiltinCheckboxes();
+});
+
 function showBackupStatus(message, isError = false) {
   const status = document.getElementById("backup-status");
 
@@ -226,8 +305,11 @@ document.getElementById("import-file").addEventListener("change", handleImportFi
 
 function refresh() {
   CustomTiles.loadCustomTiles()
-    .then(renderList)
-    .catch(error => console.error("Loading custom tiles failed", error));
+    .then(() => {
+      renderList();
+      renderBuiltins();
+    })
+    .catch(error => console.error("Loading tiles failed", error));
 }
 
 document.getElementById("add-tile").addEventListener("click", () => {
@@ -235,8 +317,17 @@ document.getElementById("add-tile").addEventListener("click", () => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync" && Object.keys(changes).some(CustomTiles.isTileKey)) {
+  if (area !== "sync") return;
+
+  const keys = Object.keys(changes);
+
+  if (keys.some(CustomTiles.isTileKey)) {
     refresh();
+  } else if (keys.some(CustomTiles.isConfigKey)) {
+    // Visibility-only change (possibly from another tab): update in place to keep focus.
+    CustomTiles.loadCustomTiles()
+      .then(syncBuiltinCheckboxes)
+      .catch(error => console.error("Refreshing built-in tiles failed", error));
   }
 });
 

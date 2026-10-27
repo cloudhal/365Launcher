@@ -154,6 +154,21 @@ New tiles reserve their id when the form opens (`formState.draftId`) so an uploa
 `customTileIcon:<id>` before the record exists. `handleSubmit` writes `storage.local` first, then the sync
 record, and rolls the icon back if the sync write fails.
 
+### Hiding built-in tiles
+
+Built-ins are code, not records, so hiding one is a preference rather than a mutation: the
+`hiddenBuiltinTiles` array in `storage.sync` holds `"<page>|<link>"` entries.
+
+- `isBuiltinHidden(page, link)` is applied in `getAllIcons()` ([popup.js](../popup.js)), so a hidden tile
+  disappears from rendering, search counts and keyboard navigation together.
+- `setBuiltinHidden()` / `showAllBuiltins()` keep the array tidy (the key is removed when nothing is
+  hidden). Reads are defensive: a non-array value is ignored.
+- Identity is the link, so if a future release changes a built-in URL the stale entry stops matching and
+  the tile comes back rather than hiding the wrong thing.
+- The options page renders one checkbox per built-in grouped by page inside a collapsed `<details>`; a
+  visibility-only storage change syncs the checkboxes in place rather than rebuilding the list, so focus
+  is not lost. A tile-key change still triggers a full `refresh()`.
+
 ### Export / import
 
 `exportTiles()` builds a portable document; the options page turns it into a download
@@ -189,7 +204,7 @@ record, and rolls the icon back if the sync write fails.
 [options.html](../options.html) is registered as `options_ui` with `open_in_tab: true` and is reached from
 Settings → *Manage custom tiles* (`chrome.runtime.openOptionsPage()`). It lists tiles grouped by page in
 display order, with ↑/↓ reorder, edit, delete and a duplicate note (same URL as a built-in or as another
-custom tile), plus a *Backup* panel for export/import. `deleteCustomTile()` removes both the synced record
+custom tile), a *Built-in tiles* section for hiding built-ins, and a *Backup* panel for export/import. `deleteCustomTile()` removes both the synced record
 and its local icon. The page re-renders on `chrome.storage.onChanged`. Delete uses `window.confirm`.
 Anything that needs room belongs here rather than in the 660 px popup.
 
@@ -237,8 +252,9 @@ Selected in Settings, stored as `tabMode`, read by `initializeTabMode()`:
 ## Storage keys
 
 `chrome.storage.sync` (user settings, survives browsers/profile sync):
-`switchState` (Admin view on), `refreshState` (reload matched tab), `tabMode`, `theme`, `debugMode`, and
-one `customTile:<id>` record per custom tile (see *Custom tiles*).
+`switchState` (Admin view on), `refreshState` (reload matched tab), `tabMode`, `theme`, `debugMode`,
+`hiddenBuiltinTiles` (hidden built-ins as `"<page>|<link>"`, absent when nothing is hidden), and one
+`customTile:<id>` record per custom tile (see *Custom tiles*).
 
 `localStorage` (same extension origin, synchronous): `theme` — mirror of the `theme` setting used only
 by `theme-init.js` for the no-flash first paint.

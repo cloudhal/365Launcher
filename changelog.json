@@ -1,7 +1,10 @@
 {
     "release_date": "2026-10-27",
     "changes": [
-        "2.4.0:",
+        "2.5.0:",
+        "Added the option to hide built-in tiles you do not use.",
+        "Improved the tile manager to cover built-in visibility next to custom tiles, with a one-click Show all.",
+        "Previous:",
         "Added export and import of custom tiles as a JSON file, including uploaded icons.",
         "Added clear messages when an import file is invalid or was created by a newer version.",
         "Previous:",

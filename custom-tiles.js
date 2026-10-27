@@ -26,10 +26,12 @@ const CustomTiles = (() => {
   const MATCH_MODES = ["site", "exact", "pattern"];
   const EXPORT_APP = "365-launcher";
   const EXPORT_SCHEMA_VERSION = 1;
+  const HIDDEN_KEY = "hiddenBuiltinTiles";
   const AVATAR_COLOURS = ["#0284c7", "#4f46e5", "#7c3aed", "#db2777", "#ea580c", "#059669", "#0d9488", "#d97706"];
 
   let cachedTiles = [];
   let iconCache = new Map();
+  let hiddenBuiltins = new Set();
 
   // Convert a tile pattern into an anchored regex: '*' becomes '.*' and literal dots/question marks
   // are escaped so URLs are compared as written. Character classes (e.g. [^.-]) and quantifiers
@@ -152,6 +154,10 @@ const CustomTiles = (() => {
     return typeof key === "string" && key.startsWith(SYNC_PREFIX);
   }
 
+  function isConfigKey(key) {
+    return isTileKey(key) || key === HIDDEN_KEY;
+  }
+
   async function loadCustomTiles() {
     const [items, localItems] = await Promise.all([
       chrome.storage.sync.get(null),
@@ -163,6 +169,8 @@ const CustomTiles = (() => {
     Object.keys(localItems)
       .filter(key => key.startsWith(LOCAL_ICON_PREFIX))
       .forEach(key => iconCache.set(key.slice(LOCAL_ICON_PREFIX.length), String(localItems[key] || "")));
+
+    hiddenBuiltins = new Set(Array.isArray(items[HIDDEN_KEY]) ? items[HIDDEN_KEY].map(String) : []);
 
     cachedTiles = Object.keys(items)
       .filter(isTileKey)
@@ -225,6 +233,50 @@ const CustomTiles = (() => {
 
   function getTile(id) {
     return cachedTiles.find(tile => tile.id === id) || null;
+  }
+
+  // Built-in tiles have no mutable record, so hiding one is an entry in `hiddenBuiltinTiles`
+  // keyed by page + link. If a future release changes a built-in's URL the entry simply stops
+  // matching and that tile reappears rather than mis-hiding something else.
+  function builtinKey(page, link) {
+    return `${page}|${link}`;
+  }
+
+  function isBuiltinHidden(page, link) {
+    return hiddenBuiltins.has(builtinKey(page, link));
+  }
+
+  function getHiddenBuiltins() {
+    return [...hiddenBuiltins];
+  }
+
+  async function persistHiddenBuiltins() {
+    const values = [...hiddenBuiltins];
+
+    if (values.length > 0) {
+      await chrome.storage.sync.set({ [HIDDEN_KEY]: values });
+    } else {
+      await chrome.storage.sync.remove(HIDDEN_KEY);
+    }
+
+    return values;
+  }
+
+  async function setBuiltinHidden(page, link, hidden) {
+    const key = builtinKey(page, link);
+
+    if (hidden) {
+      hiddenBuiltins.add(key);
+    } else {
+      hiddenBuiltins.delete(key);
+    }
+
+    return persistHiddenBuiltins();
+  }
+
+  async function showAllBuiltins() {
+    hiddenBuiltins = new Set();
+    return persistHiddenBuiltins();
   }
 
   function resolveImageInput(input, errors, tileId) {
@@ -981,6 +1033,11 @@ const CustomTiles = (() => {
     resolveIconSrc,
     buildTileElement,
     isTileKey,
+    isConfigKey,
+    isBuiltinHidden,
+    getHiddenBuiltins,
+    setBuiltinHidden,
+    showAllBuiltins,
     compareTiles,
     loadCustomTiles,
     getCustomTiles,
