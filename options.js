@@ -155,15 +155,30 @@ function renderList() {
   list.appendChild(fragment);
 }
 
-function updateHiddenSummary() {
-  const hidden = CustomTiles.getHiddenBuiltins().length;
-  const summary = document.getElementById("hidden-summary");
-  const showAll = document.getElementById("show-all-tiles");
+function builtinEntries() {
+  return [
+    ...appIcons.map(icon => ({ page: "apps", link: icon.link })),
+    ...adminIcons.map(icon => ({ page: "admin", link: icon.link }))
+  ];
+}
 
-  summary.textContent = hidden === 0
-    ? "All built-in tiles are shown"
-    : `${hidden} hidden`;
-  showAll.disabled = hidden === 0;
+function updateHiddenSummary() {
+  const entries = builtinEntries();
+  const hidden = entries.filter(entry => CustomTiles.isBuiltinHidden(entry.page, entry.link)).length;
+  const summary = document.getElementById("hidden-summary");
+  const toggle = document.getElementById("toggle-all-tiles");
+
+  if (hidden === 0) {
+    summary.textContent = "All built-in tiles are shown";
+  } else if (hidden === entries.length) {
+    summary.textContent = "All built-in tiles are hidden";
+  } else {
+    summary.textContent = `${hidden} hidden`;
+  }
+
+  // The button always offers the opposite of the current state.
+  toggle.dataset.next = hidden === 0 ? "hide" : "show";
+  toggle.textContent = hidden === 0 ? "Hide all" : "Show all";
 }
 
 function syncBuiltinCheckboxes() {
@@ -229,8 +244,10 @@ function renderBuiltins() {
   syncBuiltinCheckboxes();
 }
 
-document.getElementById("show-all-tiles").addEventListener("click", async () => {
-  await CustomTiles.showAllBuiltins();
+document.getElementById("toggle-all-tiles").addEventListener("click", async () => {
+  const hide = document.getElementById("toggle-all-tiles").dataset.next === "hide";
+
+  await CustomTiles.setAllBuiltinsHidden(hide, builtinEntries());
   syncBuiltinCheckboxes();
 });
 

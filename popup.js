@@ -273,13 +273,13 @@ function showAppsPage(searchText = '') { // Show apps HTML
 
     appsPage.innerHTML = '';
 
-    if (filteredIcons.length === 0) {
-      renderEmptyState(appsPage, 'apps');
-      return;
-    }
-
     filteredIcons.forEach(icon => fragment.appendChild(CustomTiles.buildTileElement(icon)));
 
+    if (filteredIcons.length === 0) {
+      renderEmptyState(appsPage, 'apps');
+    }
+
+    // Keep the add tile reachable even when every tile is hidden or filtered out.
     if (!searchText.trim()) {
       fragment.appendChild(buildAddTileButton('apps'));
     }
@@ -294,13 +294,13 @@ function showAppsPage(searchText = '') { // Show apps HTML
 
     adminPage.innerHTML = '';
 
-    if (filteredIcons.length === 0) {
-      renderEmptyState(adminPage, 'admin apps');
-      return;
-    }
-
     filteredIcons.forEach(icon => fragment.appendChild(CustomTiles.buildTileElement(icon)));
 
+    if (filteredIcons.length === 0) {
+      renderEmptyState(adminPage, 'admin apps');
+    }
+
+    // Keep the add tile reachable even when every tile is hidden or filtered out.
     if (!searchText.trim()) {
       fragment.appendChild(buildAddTileButton('admin'));
     }

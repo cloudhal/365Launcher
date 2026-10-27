@@ -168,6 +168,12 @@ Built-ins are code, not records, so hiding one is a preference rather than a mut
 - The options page renders one checkbox per built-in grouped by page inside a collapsed `<details>`; a
   visibility-only storage change syncs the checkboxes in place rather than rebuilding the list, so focus
   is not lost. A tile-key change still triggers a full `refresh()`.
+- The bulk button is a two-state toggle driven by `#toggle-all-tiles[data-next]`: it reads **Hide all**
+  when nothing is hidden and **Show all** otherwise. `setAllBuiltinsHidden(hidden, entries)` writes the
+  whole list in one `storage.sync` call (the page supplies `{ page, link }` entries because the built-in
+  data lives in `builtin-tiles.js`). Because a user can now hide every tile, `showAppsPage()` /
+  `showAdminPage()` render the empty state and the `+` tile instead of returning early — keep the add
+  tile reachable in an otherwise empty grid.
 
 ### Export / import
 

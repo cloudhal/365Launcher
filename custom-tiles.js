@@ -279,6 +279,15 @@ const CustomTiles = (() => {
     return persistHiddenBuiltins();
   }
 
+  // builtins: [{ page, link }] — supplied by the page, which owns the built-in data.
+  async function setAllBuiltinsHidden(hidden, builtins) {
+    hiddenBuiltins = hidden
+      ? new Set(builtins.map(entry => builtinKey(entry.page, entry.link)))
+      : new Set();
+
+    return persistHiddenBuiltins();
+  }
+
   function resolveImageInput(input, errors, tileId) {
     const kind = ["letter", "bundled", "url", "upload"].includes(input.iconKind) ? input.iconKind : "letter";
 
@@ -1038,6 +1047,7 @@ const CustomTiles = (() => {
     getHiddenBuiltins,
     setBuiltinHidden,
     showAllBuiltins,
+    setAllBuiltinsHidden,
     compareTiles,
     loadCustomTiles,
     getCustomTiles,

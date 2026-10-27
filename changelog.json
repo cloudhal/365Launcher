@@ -1,7 +1,10 @@
 {
     "release_date": "2026-10-27",
     "changes": [
-        "2.5.0:",
+        "2.5.1:",
+        "Improved the built-in tiles control into a Hide all / Show all toggle whose label follows your selection.",
+        "Fixed the add tile disappearing from a grid when every tile on it was hidden.",
+        "Previous:",
         "Added the option to hide built-in tiles you do not use.",
         "Improved the tile manager to cover built-in visibility next to custom tiles, with a one-click Show all.",
         "Previous:",
