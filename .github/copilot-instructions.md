@@ -1,7 +1,8 @@
 # 365 Launcher — development notes
 
-Chrome/Edge MV3 extension (popup-only, no background service worker or content scripts). A compact grid of
-Microsoft 365 app and admin-portal tiles that focuses an already-open tab instead of opening a duplicate.
+Chrome/Edge MV3 extension (no background service worker, no content scripts) with a popup that shows a
+compact grid of Microsoft 365 app and admin-portal tiles and focuses an already-open tab instead of
+opening a duplicate, plus a full-tab options page for user-defined custom tiles.
 
 Copyright © 2026 Cloudrun Ltd, MPL-2.0.
 
@@ -9,13 +10,17 @@ Copyright © 2026 Cloudrun Ltd, MPL-2.0.
 
 | File | Role |
 | --- | --- |
-| [popup.html](../popup.html) | Entire UI: header (view toggle, refresh toggle, search, About, Settings), two tile grids, About modal, Settings modal, status bar, single `<script src="popup.js">` at the end of `<body>` |
-| [popup.js](../popup.js) | All logic and the tile data model (single file, no modules, no build step for JS) |
+| [popup.html](../popup.html) | Popup UI: header (view toggle, refresh toggle, search, About, Settings), two tile grids, About/Settings modals, status bar. Loads `ui.js`, `builtin-tiles.js`, `custom-tiles.js`, then `popup.js` |
+| [popup.js](../popup.js) | Popup behaviour: theming, grids, search, keyboard nav, tab modes, modals wiring |
+| [builtin-tiles.js](../builtin-tiles.js) | `IconItem` class plus the `appIcons` / `adminIcons` data arrays; `getBuiltinIcons()` |
+| [custom-tiles.js](../custom-tiles.js) | Custom tiles: storage CRUD, validation, match derivation, icon resolution, `buildTileElement()`, and the shared add/edit form (loaded by both pages) |
+| [ui.js](../ui.js) | `UI.createModalController()` — focus-trapping modal helper plus the global Escape handler |
+| [options.html](../options.html) / [options.js](../options.js) | Full-tab manager for custom tiles (list, edit, delete); registered via `options_ui` |
 | [theme-init.js](../theme-init.js) | Synchronous `<head>` bootstrap that applies the saved theme before first paint (no flash) |
 | [manifest.json](../manifest.json) | MV3 manifest; permissions `tabs` + `storage`; icons under `icons/` |
 | [styles/tailwind.css](../styles/tailwind.css) | Tailwind source (`@layer base/components`) — this is the file to edit |
 | [assets/tailwind.css](../assets/tailwind.css) | **Generated** minified output; committed and loaded by `popup.html`. Never edit by hand |
-| [tailwind.config.js](../tailwind.config.js) | `content` = `popup.html` + `popup.js`; `darkMode: "class"`; custom `shadow-panel` |
+| [tailwind.config.js](../tailwind.config.js) | `content` = popup + options pages and their scripts, including `custom-tiles.js`; `darkMode: "class"`; custom `shadow-panel` |
 | [changelog.json](../changelog.json) | `release_date` + `changes[]` rendered into the About modal |
 | [icons/](../icons) | 50x50 service icons plus `icon16/32/48/128.png` extension icons |
 | [images/](../images) | Light/dark logos shown in the About modal |
@@ -28,15 +33,19 @@ npm run build:css        # styles/tailwind.css -> assets/tailwind.css (minified)
 npm run dev:css          # same, --watch
 ```
 
-`assets/tailwind.css` is committed and must be rebuilt after any change to `popup.html`, `popup.js`
-(class strings), `styles/tailwind.css`, or `tailwind.config.js`. If you forget, new utility classes
+`assets/tailwind.css` is committed and must be rebuilt after any change to `popup.html`, `popup.js`,
+`options.html`, `options.js`, `custom-tiles.js` (class strings), `styles/tailwind.css`, or
+`tailwind.config.js` — any new file that contains Tailwind classes must also be added to the
+`content` globs. If you forget, new utility classes
 silently render unstyled. Verify with `npm run build:css && git diff --stat assets/tailwind.css`
 (an empty diff means the committed bundle was already current).
 
 ## Tile data model
 
-Two module-level arrays in [popup.js](../popup.js): `appIcons` (Apps page) and `adminIcons` (Admin page).
-Each entry is an `IconItem(image, link, text, matchType, alternativeLinks = [])`:
+Two arrays in [builtin-tiles.js](../builtin-tiles.js): `appIcons` (Apps page) and `adminIcons` (Admin page).
+Each entry is an `IconItem(image, link, text, matchType, alternativeLinks = [])`. Custom tiles use the same
+shape and are merged in front of the built-ins by `getAllIcons(page)` in [popup.js](../popup.js:224), so a
+user tile wins over a built-in with the same link.
 
 - `image` — path relative to the extension root, e.g. `icons/Excel_50x50.png`.
 - `link` — the URL opened when no existing tab matches; also the sort key target and the
@@ -65,11 +74,81 @@ anywhere in the array.
 4. Reload the extension in `chrome://extensions` — the popup is not hot-reloaded and `manifest.json`
    changes (e.g. version strings) require a reload.
 
+## Custom tiles
+
+Users add their own tiles from the popup or the options page; both pages load
+[custom-tiles.js](../custom-tiles.js), which owns the whole feature.
+
+### Record shape
+
+One `chrome.storage.sync` key per tile, prefix `customTile:`:
+
+```js
+{
+  schemaVersion: 1,
+  id: "ct_lq8x2k7f3a",
+  text: "Contoso Wiki",
+  link: "https://contoso.sharepoint.com/sites/wiki",  // normalised via new URL().href
+  page: "apps",                                       // "apps" | "admin"
+  matchMode: "site",                                  // "site" | "exact" | "pattern"
+  matchType: "pattern",                               // derived, consumed by openOrFocusTab()
+  alternativeLinks: ["https://contoso.sharepoint.com/*"],
+  image: "letter:",                                   // "icons/X.png" | https URL | "letter:"
+  createdAt, updatedAt
+}
+```
+
+- **One key per tile, not one array**, because `storage.sync` allows ~100 KB total but only 8 KB per
+  item; an array would hit that ceiling after ~25 tiles and one failed write would lose everything.
+  `loadCustomTiles()` reads all keys and filters by prefix. The UI caps users at `MAX_TILES` (50).
+- **`matchMode` is the source of truth.** `tileFromStorage()` re-derives `matchType` /
+  `alternativeLinks` on every read via `deriveMatch()`, so a stale, hand-edited or cross-device record
+  can never end up with matching rules that disagree with what the editor shows.
+  - `site` → `pattern` with `alternativeLinks: [origin + "/*"]` (anchored, so `example.com.evil.net`
+    cannot match `example.com`; a plain `startsWith` would).
+  - `exact` → `matchType: "exact"`.
+  - `pattern` → the user's wildcard patterns, validated with `wildcardToRegExp()` before saving.
+- **Records are treated as untrusted input**: `tileFromStorage()` drops tiles whose link is not
+  http(s), clamps unknown `page`/`matchMode` values to defaults, and `resolveIconSrc()` renders anything
+  that is not an `icons/*.png` path or an http(s) URL as a generated letter avatar. `validateTile()`
+  enforces the same rules plus length limits on write.
+- **Icons never live in `sync`**: `letter:` renders a local SVG data URL, `icons/...` is bundled, and an
+  https URL is remote. A future upload path should store data URLs in `storage.local` under
+  `customTileIcon:<id>` and extend `resolveIconSrc()`; the letter avatar is the fallback there too.
+
+### Rendering and matching
+
+- `getAllIcons(page)` merges custom tiles (custom first) with the built-ins; rendering, search counts,
+  sorting and keyboard navigation all flow through it.
+- `buildTileElement()` builds every tile with `createElement` + `textContent` — do not go back to
+  `innerHTML` templates for tile markup, because labels are user-supplied.
+- Custom tiles carry `data-tile-id`; `handleIconClick()` resolves them by id and falls back to the
+  `item.link === icon.href` comparison for built-ins (an `<a href>` normalises `https://x` to
+  `https://x/`, so custom links are normalised on save for the same reason).
+- A `+` tile (`[data-add-tile]`, `buildAddTileButton()`) is appended to each grid when no search is
+  active and opens the add form.
+
+### Add/edit form
+
+`CustomTiles.openTileForm({ tile, page, onSaved })` injects a single modal into `document.body` on first
+use and reuses it afterwards; it is shared by the popup (`+` tile) and the options page (Add/Edit). On
+URL blur it borrows the title and favicon of a matching open tab (`chrome.tabs.query`, already permitted)
+when adding a tile, so the user usually only pastes a URL.
+
+### Options page
+
+[options.html](../options.html) is registered as `options_ui` with `open_in_tab: true` and is reached from
+Settings → *Manage custom tiles* (`chrome.runtime.openOptionsPage()`). It lists tiles with edit/delete and
+re-renders on `chrome.storage.onChanged`. Delete uses `window.confirm`. Anything that needs room (icon
+upload, import/export, reordering) belongs here rather than in the 660 px popup.
+
 ## Runtime flow
 
 `DOMContentLoaded` in [popup.js](../popup.js) calls, in order: `togglePages()`, `setupSearchFilter()`,
 `renderFilteredPages()`, `focusSearchInput()`, `showAboutModal()`, `showSettingsModal()`,
-`setupKeyboardShortcuts()`, `setupStatusBar()`.
+`setupKeyboardShortcuts()`, `setupStatusBar()`, then `CustomTiles.loadCustomTiles().then(renderFilteredPages)`
+so built-ins paint immediately and custom tiles appear a tick later. `chrome.storage.onChanged` re-runs the
+same load + render whenever a `customTile:` key changes.
 
 - `renderFilteredPages()` re-renders both grids from `activeSearchText`, announces counts to the
   `#search-status` live region, and re-runs `initializeTabMode()`. Anything that re-renders tiles must go
@@ -83,9 +162,10 @@ anywhere in the array.
   label swap) and the Refresh toggle, and mirrors all three to `chrome.storage.sync`.
 - Every tile is an `<a href target="_blank">`; each tab mode calls `event.preventDefault()` and drives
   `chrome.tabs` itself.
-- Modals use `createModalController()`: focus trap on Tab, restore focus on close, backdrop click and
-  `[data-close-modal]` close it, and a document-level Escape handler closes the top-most open
-  `.modal-shell[data-open="true"]` (the controller is stashed on the element as `__closeModal`).
+- Modals use `UI.createModalController()` ([ui.js](../ui.js)): focus trap on Tab, restore focus on close,
+  backdrop click and `[data-close-modal]` close it, and a document-level Escape handler closes the
+  top-most open `.modal-shell[data-open="true"]` (the controller is stashed on the element as
+  `__closeModal`). The custom tile form uses the same helper.
 - Theme: [theme-init.js](../theme-init.js) runs in `<head>`, reads the `theme` value mirrored into
   `localStorage` by `applyTheme()`, and sets `data-theme` on `<html>` plus the `dark` class before first
   paint. `applyTheme()` then re-resolves `system` via `prefers-color-scheme` and rewrites both. Do not
@@ -106,7 +186,8 @@ Selected in Settings, stored as `tabMode`, read by `initializeTabMode()`:
 ## Storage keys
 
 `chrome.storage.sync` (user settings, survives browsers/profile sync):
-`switchState` (Admin view on), `refreshState` (reload matched tab), `tabMode`, `theme`, `debugMode`.
+`switchState` (Admin view on), `refreshState` (reload matched tab), `tabMode`, `theme`, `debugMode`, and
+one `customTile:<id>` record per custom tile (see *Custom tiles*).
 
 `localStorage` (same extension origin, synchronous): `theme` — mirror of the `theme` setting used only
 by `theme-init.js` for the no-flash first paint.
@@ -134,7 +215,7 @@ and, only while `debugMode` is on, arbitrary log keys written by `logEvent()` (`
   the last match is written on every successful tab scan. Diagnostic only.
 - The About modal's share buttons intentionally share `SHARE_URL` (the public product page) rather than
   `window.location`, which would be the unusable `chrome-extension://…/popup.html` URL.
-- `changelog.json` is hand-maintained and its version heading (`2.1.2:` today) can drift from
+- `changelog.json` is hand-maintained and its version heading (`2.2.0:` today) can drift from
   `manifest.json`'s `version`; bump both together (the About modal shows them side by side).
 - There are no automated tests or linters in the repo — see *Manual testing*.
 - `node_modules/` and `.DS_Store` are git-ignored as of the hygiene fix; keep it that way.
@@ -151,14 +232,21 @@ and, only while `debugMode` is on, arbitrary log keys written by `logEvent()` (`
 
 ## Manual testing
 
-There are no automated tests, linters, or build steps for `popup.js`. Validate with:
+There are no automated tests, linters, or build steps for the JavaScript. Validate with:
 
 ```bash
-node --check popup.js && node --check theme-init.js
+node --check popup.js && node --check custom-tiles.js && node --check options.js \
+  && node --check ui.js && node --check builtin-tiles.js && node --check theme-init.js
 python3 -m json.tool manifest.json >/dev/null && python3 -m json.tool changelog.json >/dev/null
 npm run build:css && git diff --stat assets/tailwind.css
 ```
 
-then load the folder via `chrome://extensions` → *Load unpacked* and exercise the popup. Note that
-`popup.js` exits early outside an extension context (`chrome.runtime.getManifest()` at the top level), so
-it cannot be smoke-tested by opening `popup.html` as a plain `file://` page.
+then load the folder via `chrome://extensions` → *Load unpacked* and exercise the popup and the options
+page. Note that `popup.js` exits early outside an extension context (`chrome.runtime.getManifest()` at the
+top level), so it cannot be smoke-tested by opening `popup.html` as a plain `file://` page.
+
+A throwaway jsdom harness (stubbed `chrome.storage`/`chrome.tabs`, `JSDOM.fromFile` on `popup.html` and
+`options.html`) is a practical way to test this end to end without Chrome — install jsdom with
+`npm install --no-save jsdom` and `npm prune` afterwards so the lockfile stays clean. Remember to stub
+callbacks as **async** (`setTimeout`) like the real extension APIs, otherwise ordering bugs appear that
+Chrome never hits.

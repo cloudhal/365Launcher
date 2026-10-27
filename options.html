@@ -1,0 +1,44 @@
+<!-- 
+Copyright © 2026 Cloudrun Ltd
+ 
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>365 Launcher — Custom tiles</title>
+  <script src="theme-init.js"></script>
+  <link rel="stylesheet" href="assets/tailwind.css">
+</head>
+<body>
+  <main class="mx-auto w-full max-w-2xl px-6 py-8">
+    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4 dark:border-slate-800">
+      <div>
+        <h1 class="text-lg font-semibold text-slate-900 dark:text-slate-50">Custom tiles</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Your own apps and portals, shown alongside the built-in tiles in the popup.</p>
+      </div>
+      <button type="button" id="add-tile" class="panel-button">Add tile</button>
+    </header>
+
+    <p id="tile-summary" class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400"></p>
+    <ul id="tile-list" class="mt-3 space-y-2"></ul>
+
+    <div id="empty-state" class="mt-3 hidden rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+      No custom tiles yet. Choose <span class="font-medium text-slate-700 dark:text-slate-200">Add tile</span> to create one.
+    </div>
+
+    <p class="mt-8 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+      Custom tiles sync with your Chrome profile. Icons added by URL are loaded from that address, so they may not appear offline.
+    </p>
+  </main>
+
+  <script src="ui.js"></script>
+  <script src="builtin-tiles.js"></script>
+  <script src="custom-tiles.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

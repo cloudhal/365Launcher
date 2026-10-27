@@ -7,6 +7,7 @@ A lightweight, compact, launcher for Microsoft 365 apps and admin portals. Featu
 - 🧇 **Quick Access**: Access Microsoft 365 apps and admin portals directly from a single launcher.
 - 🌐 **Tab mode**: Minimises the number of open by finding existing open tabs, choose between three tab modes.
 - 🎨 **Customizable**: Toggle between Apps and Admin panels. Suggested to use a different browser profile for admin accounts.
+- ➕ **Custom tiles**: Add your own apps and portals with a label, URL and icon, and choose whether a tile matches any page on the site, one exact URL, or your own wildcard patterns.
 - 🌗 **Dark Mode**: Adapts to the browser's dark mode setting.
 - 📁 **Compact Design**: A responsive grid interface tailored for seamless user experience.
 - 🔒 **Secure**: Settings are synced and stored securely using `chrome.storage`.
@@ -20,6 +21,7 @@ A lightweight, compact, launcher for Microsoft 365 apps and admin portals. Featu
 - Click on the 365 Launcher icon in the Chrome toolbar.
 - Use the **Apps/Admin** toggle to switch between app shortcuts and admin portals.
 - The launcher is responsive and adapts to your current browser theme (light or dark mode).
+- Use the **+** tile at the end of a grid to add a custom tile, or open **Settings → Manage custom tiles** to edit or delete them. If the URL is already open in a tab, the label and favicon are filled in for you.
 
 ## Available Shortcuts
 

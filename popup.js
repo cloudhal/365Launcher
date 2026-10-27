@@ -6,79 +6,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-class IconItem {
-    constructor(image, link, text, matchType, alternativeLinks = []) {
-      if (!image || !link || !text || !matchType) {
-        throw new Error("Missing required IconItem parameters");
-    }
-      this.image = image;
-      this.link = link;
-      this.text = text;
-      this.matchType = matchType; // 'exact', 'startsWith', or 'pattern'
-      this.alternativeLinks = alternativeLinks; // Array of alternative URLs, blank if none
-    }
-  }
-
-// app icons
-// Patterns are plain URLs with '*' wildcards; '.' and '?' always match literally, while character
-// classes such as [^.-] are passed through as regex. To test one in a regex tester, replace * with .*
-// e.g. https:\/\/[^.-]+\.sharepoint\.com\/.*
-// Any time you want to match using a * wildcard, set the type to 'pattern'
-// For icons, if no border is present, resize image to 44px using Photoshop or Photopea, then resize the canvas to 50 px to add some space
-const appIcons = [
-  new IconItem("icons/Bookings_50x50.png", "https://outlook.office.com/bookings/", "Bookings", "startsWith"),
-  new IconItem("icons/Excel_50x50.png", "https://m365.cloud.microsoft/launch/excel/", "Excel", "startsWith"),
-  new IconItem("icons/Copilot_50x50.png", "https://m365.cloud.microsoft/chat", "Copilot", "pattern", ["https://copilot.cloud.microsoft/*","https://m365.cloud.microsoft/chat*"]),
-  new IconItem("icons/Fabric_50x50.png", "https://app.fabric.microsoft.com/", "Fabric", "startsWith"),
-  new IconItem("icons/Forms_50x50.png", "https://forms.office.com/", "Forms", "startsWith"),
-  new IconItem("icons/Lists_50x50.png", "https://m365.cloud.microsoft/launch/lists/", "Lists", "pattern", ["https://*-my.sharepoint.com/personal/*/Lists.aspx?*","https://*.sharepoint.com/sites/*/Lists/*"]),
-  new IconItem("icons/Microsoft_Teams_50x50.png", "https://teams.cloud.microsoft/", "Teams", "startsWith"),
-  new IconItem("icons/Microsoft365_50x50.png", "https://m365.cloud.microsoft/?auth=2", "Office", "exact"),
-  new IconItem("icons/OneDrive_50x50.png", "https://m365.cloud.microsoft/launch/onedrive/", "OneDrive", "pattern", ["https://*-my.sharepoint.com/?*","https://*-my.sharepoint.com/shared?*","https://*-my.sharepoint.com/my?*"]),
-  new IconItem("icons/OneNote_50x50.png", "https://m365.cloud.microsoft/launch/onenote/", "OneNote", "startsWith"),
-  new IconItem("icons/Outlook_50x50.png", "https://outlook.cloud.microsoft/mail", "Outlook", "startsWith"),
-  new IconItem("icons/Planner_50x50.png", "https://planner.cloud.microsoft/", "Planner", "startsWith"),
-  new IconItem("icons/Power_Apps_50x50.png", "https://make.powerapps.com/", "Power Apps", "startsWith"),
-  new IconItem("icons/Power_Automate_50x50.png", "https://make.powerautomate.com/", "Power Automate", "startsWith", ["https://flow.microsoft.com/*"]),
-  new IconItem("icons/Copilot_Studio_50x50.png", "https://copilotstudio.microsoft.com/", "Copilot Studio", "startsWith"),
-  new IconItem("icons/PowerPoint_50x50.png", "https://m365.cloud.microsoft/launch/powerpoint/", "PowerPoint", "startsWith"),
-  new IconItem("icons/Power_BI_50x50.png", "https://app.powerbi.com/", "Power BI", "startsWith"),
-  new IconItem("icons/Power_Pages_50x50.png", "https://make.powerpages.microsoft.com/", "Power Pages", "startsWith"),
-  new IconItem("icons/Project_50x50.png", "https://project.microsoft.com/", "Project", "startsWith"),
-  new IconItem("icons/SharePoint_50x50.png", "https://m365.cloud.microsoft/launch/sharepoint/", "SharePoint", "pattern", ["https://[^.-]+.sharepoint.com/*"]), // don't match anything with a - in the subdomain
-  new IconItem("icons/To_Do_50x50.png", "https://to-do.office.com/", "To Do", "startsWith"),
-  new IconItem("icons/Microsoft-Stream_50x50.png", "https://m365.cloud.microsoft/launch/stream", "Stream", "startsWith"),
-  new IconItem("icons/Word_50x50.png", "https://m365.cloud.microsoft/launch/word/", "Word", "startsWith"),
-  new IconItem("icons/Engage_50x50.png", "https://engage.cloud.microsoft/", "Engage", "startsWith"),
-  new IconItem("icons/Loop_50x50.png", "https://loop.cloud.microsoft/", "Loop", "startsWith"),
-  new IconItem("icons/Visio_50x50.png", "https://m365.cloud.microsoft/launch/visio", "Visio", "startsWith"),
-  new IconItem("icons/Viva_50x50.png", "https://viva.cloud.microsoft/", "Viva", "startsWith"),
-  new IconItem("icons/Designer_50x50.png", "https://designer.microsoft.com/", "Designer", "startsWith"),
-  new IconItem("icons/Clipchamp_50x50.png", "https://www.office.com/launch/clipchamp?auth=2/", "Clipchamp", "pattern", ["https:\/\/[^.-]+.sharepoint.com\/[^.-]+\/videohub.aspx", "https:\/\/[^.-]+.sharepoint.com\/[^.-]+\/videoeditor.aspx"]), // match clipchamp launch page or video hub in sharepoint
-  new IconItem("icons/Windows_50x50.png", "https://windows.cloud.microsoft/", "Windows app", "startsWith")
-];
-
-// admin icons
-const adminIcons = [
-    new IconItem("icons/Microsoft365_50x50.png", "https://admin.cloud.microsoft/#", "365 Admin", "startsWith"),
-    new IconItem("icons/EntraID_50x50.png", "https://entra.microsoft.com/", "Entra", "startsWith"),
-    new IconItem("icons/Azure_50x50.png", "https://portal.azure.com/", "Azure", "startsWith"),
-    new IconItem("icons/Purview_50x50.png", "https://purview.microsoft.com/", "Purview", "startsWith"),
-    new IconItem("icons/Intune_50x50.png", "https://intune.microsoft.com/", "Intune", "startsWith"),
-    new IconItem("icons/Exchange_50x50.png", "https://admin.cloud.microsoft/exchange", "Exchange", "startsWith"),
-    new IconItem("icons/PowerPlatform_50x50.png", "https://admin.powerplatform.microsoft.com/", "Power Platform", "startsWith"),
-    new IconItem("icons/Fabric_50x50.png", "https://app.fabric.microsoft.com/admin-portal/tenantSettings?experience=fabric-developer/", "Fabric", "startsWith"),
-    new IconItem("icons/Defender_50x50.png", "https://security.microsoft.com/", "Defender", "startsWith"),
-    new IconItem("icons/Lighthouse_50x50.png", "https://lighthouse.microsoft.com/", "Lighthouse", "startsWith"),
-    new IconItem("icons/SharePoint_50x50.png", "https://admin.microsoft.com/sharepoint", "SharePoint", "pattern", ["https://*-admin.sharepoint.com/*"]),
-    new IconItem("icons/Microsoft_Teams_50x50.png", "https://admin.teams.microsoft.com/", "Teams", "startsWith"),
-    new IconItem("icons/Engage_50x50.png", "https://engage.cloud.microsoft/main/admin", "Engage", "startsWith"),
-    new IconItem("icons/AzureDevops_50x50.png", "https://dev.azure.com/", "DevOps", "startsWith"),
-    new IconItem("icons/MicrosoftGraph_50x50.png", "https://developer.microsoft.com/en-us/graph/graph-explorer/", "Graph", "startsWith"),
-    new IconItem("icons/Office_50x50.png", "https://config.office.com/", "365 Apps", "startsWith"),
-    new IconItem("icons/Foundry_50x50.png", "https://ai.azure.com/", "Foundry", "startsWith"),
-];
-
 // Get the version from the manifest file and display it. Note that extension needs to be reloaded if you change the manifest.
 const manifest = chrome.runtime.getManifest();
 console.log("Manifest version:", manifest.version);
@@ -129,99 +56,6 @@ function applyTheme(theme) {
   setResolvedTheme(resolvedTheme);
   console.log(`🌗 Applied theme: ${resolvedTheme}`);
 }
-
-function createModalController(modalId) {
-  const modal = document.getElementById(modalId);
-  let lastFocusedElement = null;
-
-  const getFocusableElements = () => {
-    const selectors = [
-      'a[href]',
-      'button:not([disabled])',
-      'textarea:not([disabled])',
-      'input:not([disabled])',
-      'select:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])'
-    ];
-
-    return [...modal.querySelectorAll(selectors.join(','))]
-      .filter(element => element.offsetParent !== null || element === document.activeElement);
-  };
-
-  const closeModal = () => {
-    modal.dataset.open = 'false';
-    modal.setAttribute('aria-hidden', 'true');
-
-    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-      lastFocusedElement.focus();
-    }
-  };
-
-  const openModal = (triggerElement = document.activeElement) => {
-    lastFocusedElement = triggerElement;
-    modal.dataset.open = 'true';
-    modal.setAttribute('aria-hidden', 'false');
-
-    const [firstFocusable] = getFocusableElements();
-    if (firstFocusable) {
-      firstFocusable.focus();
-    }
-  };
-
-  modal.querySelectorAll('[data-close-modal]').forEach(button => {
-    button.addEventListener('click', closeModal);
-  });
-
-  modal.addEventListener('click', event => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
-
-  modal.addEventListener('keydown', event => {
-    if (event.key !== 'Tab' || modal.dataset.open !== 'true') {
-      return;
-    }
-
-    const focusableElements = getFocusableElements();
-    if (focusableElements.length === 0) {
-      return;
-    }
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  });
-
-  modal.__closeModal = closeModal;
-
-  return { openModal, closeModal };
-}
-
-document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape') {
-    return;
-  }
-
-  const openModals = [...document.querySelectorAll('.modal-shell[data-open="true"]')];
-  const activeModal = openModals[openModals.length - 1];
-
-  if (!activeModal) {
-    return;
-  }
-
-  event.preventDefault();
-  if (typeof activeModal.__closeModal === 'function') {
-    activeModal.__closeModal();
-  }
-});
 
 function setupKeyboardShortcuts() {
   const searchInput = document.getElementById('icon-search');
@@ -347,12 +181,25 @@ function logEvent(keyOrMessage, message) {
 document.addEventListener('DOMContentLoaded', () => {
   togglePages(); // Toggle between apps and admin pages
   setupSearchFilter();
-  renderFilteredPages();
+  renderFilteredPages(); // Built-in tiles paint immediately
   focusSearchInput();
   showAboutModal();
   showSettingsModal();
   setupKeyboardShortcuts();
   setupStatusBar();
+
+  // Custom tiles live in chrome.storage.sync, so repaint when they arrive (and whenever they change).
+  CustomTiles.loadCustomTiles()
+    .then(renderFilteredPages)
+    .catch(error => console.error('Loading custom tiles failed', error));
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && Object.keys(changes).some(CustomTiles.isTileKey)) {
+    CustomTiles.loadCustomTiles()
+      .then(renderFilteredPages)
+      .catch(error => console.error('Refreshing custom tiles failed', error));
+  }
 });
 
 function getFilteredIcons(iconSet, searchText = '') {
@@ -373,14 +220,19 @@ function renderFilteredPages() {
   initializeTabMode(); // Initialize tab mode for newly rendered icons
 }
 
+// Custom tiles come first so a user's own tile wins over a built-in with the same link.
+function getAllIcons(page) {
+  return [...CustomTiles.getCustomTiles(page), ...(page === 'admin' ? adminIcons : appIcons)];
+}
+
 function announceSearchResults() {
   const statusElement = document.getElementById('search-status');
   if (!statusElement) {
     return;
   }
 
-  const appsCount = getFilteredIcons(appIcons, activeSearchText).length;
-  const adminCount = getFilteredIcons(adminIcons, activeSearchText).length;
+  const appsCount = getFilteredIcons(getAllIcons('apps'), activeSearchText).length;
+  const adminCount = getFilteredIcons(getAllIcons('admin'), activeSearchText).length;
   statusElement.textContent = `${appsCount} apps and ${adminCount} admin apps found`;
 }
 
@@ -411,7 +263,7 @@ function renderEmptyState(container, label) {
 function showAppsPage(searchText = '') { // Show apps HTML
     const appsPage = document.getElementById('apps-page');
     const fragment = document.createDocumentFragment();
-    const filteredIcons = getFilteredIcons(appIcons, searchText);
+    const filteredIcons = getFilteredIcons(getAllIcons('apps'), searchText);
 
     appsPage.innerHTML = '';
 
@@ -420,25 +272,19 @@ function showAppsPage(searchText = '') { // Show apps HTML
       return;
     }
 
-    filteredIcons.forEach(icon => {
-      const iconHTML = `
-      <a href="${icon.link}" target="_blank" class="app-icon">
-        <div class="icon-item">
-          <img src="${icon.image}" alt="${icon.text}" class="h-auto max-w-[35px]">
-          <p class="mt-2 line-clamp-2 text-[11px] font-medium text-slate-700 dark:text-slate-200">${icon.text}</p>
-        </div>
-      </a>`;
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = iconHTML;
-        fragment.appendChild(tempDiv.firstElementChild);
-    });
+    filteredIcons.forEach(icon => fragment.appendChild(CustomTiles.buildTileElement(icon)));
+
+    if (!searchText.trim()) {
+      fragment.appendChild(buildAddTileButton('apps'));
+    }
+
     appsPage.appendChild(fragment); // Append all icons at once for better performance
 }
 
   function showAdminPage(searchText = '') { // Show admin HTML
     const adminPage = document.getElementById('admin-page');
     const fragment = document.createDocumentFragment();
-    const filteredIcons = getFilteredIcons(adminIcons, searchText);
+    const filteredIcons = getFilteredIcons(getAllIcons('admin'), searchText);
 
     adminPage.innerHTML = '';
 
@@ -447,18 +293,12 @@ function showAppsPage(searchText = '') { // Show apps HTML
       return;
     }
 
-    filteredIcons.forEach(icon => {
-      const iconHTML = `
-      <a href="${icon.link}" target="_blank" class="app-icon">
-        <div class="icon-item">
-          <img src="${icon.image}" alt="${icon.text}" class="h-auto max-w-[35px]">
-          <p class="mt-2 line-clamp-2 text-[11px] font-medium text-slate-700 dark:text-slate-200">${icon.text}</p>
-        </div>
-      </a>`;
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = iconHTML;
-        fragment.appendChild(tempDiv.firstElementChild);
-    });
+    filteredIcons.forEach(icon => fragment.appendChild(CustomTiles.buildTileElement(icon)));
+
+    if (!searchText.trim()) {
+      fragment.appendChild(buildAddTileButton('admin'));
+    }
+
     adminPage.appendChild(fragment); // Append all icons at once for better performance
 }
 
@@ -548,7 +388,33 @@ function initializeTabMode() { // Initialize tab mode
   });
 }
 
+function buildAddTileButton(page) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'app-icon add-tile';
+  button.dataset.addTile = page;
+  button.setAttribute('aria-label', 'Add a custom tile');
+  button.innerHTML = `
+    <div class="icon-item items-center justify-center border border-dashed border-slate-300 text-slate-400 dark:border-slate-600 dark:text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+      </svg>
+      <p class="mt-1 text-[11px] font-medium">Add</p>
+    </div>`;
+  return button;
+}
+
 function handleIconClick(event) {
+  const addTileButton = event.target.closest('[data-add-tile]');
+
+  if (addTileButton) {
+    CustomTiles.openTileForm({
+      page: addTileButton.dataset.addTile,
+      onSaved: renderFilteredPages
+    });
+    return;
+  }
+
   const icon = event.target.closest('.app-icon');
   if (!icon) {
     return;
@@ -573,7 +439,11 @@ function handleIconClick(event) {
   }
 
   // Individual tab mode: focus a matching tab if one is open, otherwise open the link
-  const item = [...appIcons, ...adminIcons].find(candidate => candidate.link === href);
+  const allIcons = [...CustomTiles.getCustomTiles(), ...appIcons, ...adminIcons];
+  const tileId = icon.dataset.tileId;
+  const item = tileId
+    ? allIcons.find(candidate => candidate.id === tileId)
+    : allIcons.find(candidate => candidate.link === href);
 
   if (!item) {
     logEvent(`No matching icon item for ${href}`);
@@ -687,24 +557,13 @@ function openOrFocusTab(url, tabs, item) {
   }
 }
 
-// Convert a tile pattern into an anchored regex: '*' becomes '.*' and literal dots/question marks
-// are escaped so URLs are compared as written. Character classes (e.g. [^.-]) and quantifiers
-// (e.g. the '+' in [^.-]+) keep their regex meaning.
-function wildcardToRegExp(pattern) {
-  const source = pattern
-      .replace(/[.?]/g, '\\$&') // Match '.' and '?' literally
-      .replace(/\*/g, '.*'); // Replace '*' with '.*'
-
-  return new RegExp(`^${source}$`);
-}
-
 // Function to match wildcard patterns
 function matchPattern(pattern, url, alternativeLinks = []) {
   // Check primary pattern match
-  if (wildcardToRegExp(pattern).test(url)) return true;
+  if (CustomTiles.wildcardToRegExp(pattern).test(url)) return true;
 
   // Check alternative links
-  const matchingAlternative = alternativeLinks.find(alternative => wildcardToRegExp(alternative).test(url));
+  const matchingAlternative = alternativeLinks.find(alternative => CustomTiles.wildcardToRegExp(alternative).test(url));
 
   if (matchingAlternative) {
     chrome.storage.local.set({ alternativeURL: matchingAlternative }); // Save alternative link for debugging
@@ -718,7 +577,7 @@ function matchPattern(pattern, url, alternativeLinks = []) {
   // About modal
 function showAboutModal() {
   const aboutIcon = document.getElementById('about-icon');
-  const aboutModal = createModalController('about-modal');
+  const aboutModal = UI.createModalController('about-modal');
   const logoDark = document.getElementById('logo-dark');
   const logoLight = document.getElementById('logo-light');
 
@@ -779,11 +638,13 @@ document.querySelectorAll('.share-btn').forEach(btn => {
 // Settings modal
 function showSettingsModal() {
     const settingsIcon = document.getElementById('settings-icon');
-    const settingsModal = createModalController('settings-modal');
+    const settingsModal = UI.createModalController('settings-modal');
     const saveSettings = document.getElementById('save-settings');
     const themeSelect = document.getElementById('theme');
     const tabModeSelect = document.getElementById('tab-mode');
     const debugModeToggle = document.getElementById('debug-mode');
+    const manageTilesButton = document.getElementById('manage-tiles');
+    const customTileCount = document.getElementById('custom-tile-count');
 
     const DEFAULT_SETTINGS = {
       theme: 'system',
@@ -800,8 +661,19 @@ function showSettingsModal() {
       });
     };
 
+    const updateCustomTileCount = () => {
+      const count = CustomTiles.getCustomTiles().length;
+      customTileCount.textContent = count === 1 ? '1 tile' : `${count} tiles`;
+    };
+
+    manageTilesButton.addEventListener('click', () => {
+      chrome.runtime.openOptionsPage();
+      settingsModal.closeModal();
+    });
+
     settingsIcon.addEventListener('click', () => {
       loadSettings();
+      updateCustomTileCount();
       settingsModal.openModal(settingsIcon);
     });
 

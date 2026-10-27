@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["./popup.html", "./popup.js"],
+  content: ["./popup.html", "./popup.js", "./options.html", "./options.js", "./custom-tiles.js"],
   theme: {
     extend: {
       fontFamily: {

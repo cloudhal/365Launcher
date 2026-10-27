@@ -1,11 +1,15 @@
 {
     "manifest_version": 3,
     "name": "365 Launcher",
-    "version": "2.1.2",
+    "version": "2.2.0",
     "description": "A lightweight and compact Microsoft 365 launcher for apps and admin portals. Reduce tab clutter, speed up your workflow.",
     "action": {
       "default_popup": "popup.html",
       "default_icon": "icons/icon128.png"
+    },
+    "options_ui": {
+      "page": "options.html",
+      "open_in_tab": true
     },
     "icons": {
     "16": "icons/icon16.png",
