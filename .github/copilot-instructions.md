@@ -93,7 +93,8 @@ One `chrome.storage.sync` key per tile, prefix `customTile:`:
   matchMode: "site",                                  // "site" | "exact" | "pattern"
   matchType: "pattern",                               // derived, consumed by openOrFocusTab()
   alternativeLinks: ["https://contoso.sharepoint.com/*"],
-  image: "letter:",                                   // "icons/X.png" | https URL | "letter:"
+  image: "letter:",                                   // "icons/X.png" | https URL | "letter:" | "storage:<id>"
+  order: 0,                                           // position on its page; null for pre-2.3 records
   createdAt, updatedAt
 }
 ```
@@ -112,9 +113,22 @@ One `chrome.storage.sync` key per tile, prefix `customTile:`:
   http(s), clamps unknown `page`/`matchMode` values to defaults, and `resolveIconSrc()` renders anything
   that is not an `icons/*.png` path or an http(s) URL as a generated letter avatar. `validateTile()`
   enforces the same rules plus length limits on write.
-- **Icons never live in `sync`**: `letter:` renders a local SVG data URL, `icons/...` is bundled, and an
-  https URL is remote. A future upload path should store data URLs in `storage.local` under
-  `customTileIcon:<id>` and extend `resolveIconSrc()`; the letter avatar is the fallback there too.
+- **Icons never live in `sync`**: `letter:` renders a local SVG data URL, `icons/...` is bundled, an
+  https URL is remote, and `storage:<id>` points at an uploaded icon stored in `storage.local` under
+  `customTileIcon:<id>`. `loadCustomTiles()` preloads those into `iconCache` so rendering stays
+  synchronous; if the local icon is missing (new machine, cleared data) `resolveIconSrc()` falls back to
+  the letter avatar. Uploads are decoded, drawn onto a 50x50 canvas and re-encoded as PNG (≤ 32 KB).
+
+### Ordering
+
+- `compareTiles()` sorts custom tiles (anything with an `id`) **first**, by their `order`, then
+  alphabetically; tiles saved before ordering existed (`order: null`) fall in alphabetically after the
+  ordered ones, and built-ins (no `id`) follow alphabetically. The popup's `getFilteredIcons()` uses this
+  comparator directly, so the grid always matches the options-page list.
+- `order` is per page. `saveCustomTile()` appends new tiles (and tiles moved to the other page) via
+  `nextOrderFor()`. `moveCustomTile(id, "up" | "down")` swaps with the neighbour and rewrites **all**
+  tiles on that page with sequential orders, which also normalises legacy `null` values the first time
+  anything is moved. The options page disables ↑ on the first row and ↓ on the last row of each page.
 
 ### Rendering and matching
 
@@ -133,14 +147,21 @@ One `chrome.storage.sync` key per tile, prefix `customTile:`:
 `CustomTiles.openTileForm({ tile, page, onSaved })` injects a single modal into `document.body` on first
 use and reuses it afterwards; it is shared by the popup (`+` tile) and the options page (Add/Edit). On
 URL blur it borrows the title and favicon of a matching open tab (`chrome.tabs.query`, already permitted)
-when adding a tile, so the user usually only pastes a URL.
+when adding a tile, so the user usually only pastes a URL; blur only shows duplicate warnings, errors
+appear on submit.
+
+New tiles reserve their id when the form opens (`formState.draftId`) so an uploaded icon can be keyed by
+`customTileIcon:<id>` before the record exists. `handleSubmit` writes `storage.local` first, then the sync
+record, and rolls the icon back if the sync write fails.
 
 ### Options page
 
 [options.html](../options.html) is registered as `options_ui` with `open_in_tab: true` and is reached from
-Settings → *Manage custom tiles* (`chrome.runtime.openOptionsPage()`). It lists tiles with edit/delete and
-re-renders on `chrome.storage.onChanged`. Delete uses `window.confirm`. Anything that needs room (icon
-upload, import/export, reordering) belongs here rather than in the 660 px popup.
+Settings → *Manage custom tiles* (`chrome.runtime.openOptionsPage()`). It lists tiles grouped by page in
+display order, with ↑/↓ reorder, edit, delete and a duplicate note (same URL as a built-in or as another
+custom tile). `deleteCustomTile()` removes both the synced record and its local icon. The page re-renders
+on `chrome.storage.onChanged`. Delete uses `window.confirm`. Anything that needs room (import/export)
+belongs here rather than in the 660 px popup.
 
 ## Runtime flow
 
@@ -193,7 +214,8 @@ one `customTile:<id>` record per custom tile (see *Custom tiles*).
 by `theme-init.js` for the no-flash first paint.
 
 `chrome.storage.local` (per-machine state / diagnostics):
-`myTabId` (single-tab-mode tab id), `alternativeURL` (last alternative pattern used for debugging),
+`customTileIcon:<id>` (uploaded 50x50 PNG data URLs), `myTabId` (single-tab-mode tab id),
+`alternativeURL` (last alternative pattern used for debugging),
 and, only while `debugMode` is on, arbitrary log keys written by `logEvent()` (`message`, `ClickedURL`,
 `url`, …). `logEvent(keyOrMessage, message?)` no-ops unless debug mode is on.
 

@@ -204,7 +204,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 function getFilteredIcons(iconSet, searchText = '') {
     const query = searchText.trim().toLowerCase();
-    const sortedIcons = [...iconSet].sort((a, b) => a.text.localeCompare(b.text));
+    // Custom tiles carry an order (see CustomTiles.compareTiles) so they come first, in the user's
+    // arrangement; built-ins have no order and stay alphabetical.
+    const sortedIcons = [...iconSet].sort(CustomTiles.compareTiles);
 
     if (!query) {
       return sortedIcons;

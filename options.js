@@ -13,7 +13,65 @@ const MATCH_LABELS = {
   pattern: "Custom pattern"
 };
 
-function buildRow(tile) {
+// Custom tiles render first in the popup grid, grouped by page and then by the saved order.
+function orderedTiles() {
+  return ["apps", "admin"].flatMap(page => CustomTiles.getCustomTiles(page).sort(CustomTiles.compareTiles));
+}
+
+function noteDuplicates() {
+  const builtinLinks = new Set(
+    typeof getBuiltinIcons === "function" ? getBuiltinIcons().map(icon => icon.link) : []
+  );
+  const counts = new Map();
+
+  CustomTiles.getCustomTiles().forEach(tile => {
+    counts.set(tile.link, (counts.get(tile.link) || 0) + 1);
+  });
+
+  return tile => {
+    const notes = [];
+
+    if (builtinLinks.has(tile.link)) {
+      notes.push("Also opened by a built-in tile");
+    }
+
+    if ((counts.get(tile.link) || 0) > 1) {
+      notes.push("Shared with another custom tile");
+    }
+
+    return notes;
+  };
+}
+
+function reorderButtons(tile, position, pageCount) {
+  const container = document.createElement("div");
+  container.className = "flex shrink-0 flex-col gap-1";
+
+  const make = (symbol, direction, label, disabled) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "panel-button-secondary h-6 w-6 px-0 py-0 text-xs leading-none";
+    button.textContent = symbol;
+    button.title = label;
+    button.setAttribute("aria-label", `${label}: ${tile.text}`);
+    button.disabled = disabled;
+    button.addEventListener("click", async () => {
+      if (await CustomTiles.moveCustomTile(tile.id, direction)) {
+        renderList();
+      }
+    });
+    return button;
+  };
+
+  container.append(
+    make("↑", "up", "Move up", position === 0),
+    make("↓", "down", "Move down", position === pageCount - 1)
+  );
+
+  return container;
+}
+
+function buildRow(tile, position, pageCount, notes) {
   const row = document.createElement("li");
   row.className = "flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 dark:border-slate-700 dark:bg-slate-900";
 
@@ -39,6 +97,13 @@ function buildRow(tile) {
 
   details.append(title, link, meta);
 
+  if (notes.length > 0) {
+    const warning = document.createElement("p");
+    warning.className = "mt-1 inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-100";
+    warning.textContent = notes.join(" · ");
+    details.appendChild(warning);
+  }
+
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.className = "panel-button-secondary";
@@ -60,7 +125,7 @@ function buildRow(tile) {
     renderList();
   });
 
-  row.append(image, details, editButton, deleteButton);
+  row.append(reorderButtons(tile, position, pageCount), image, details, editButton, deleteButton);
 
   return row;
 }
@@ -69,7 +134,7 @@ function renderList() {
   const list = document.getElementById("tile-list");
   const summary = document.getElementById("tile-summary");
   const emptyState = document.getElementById("empty-state");
-  const tiles = CustomTiles.getCustomTiles().sort((a, b) => a.text.localeCompare(b.text));
+  const tiles = orderedTiles();
 
   list.innerHTML = "";
   emptyState.classList.toggle("hidden", tiles.length > 0);
@@ -77,8 +142,16 @@ function renderList() {
     ? ""
     : `${tiles.length} custom ${tiles.length === 1 ? "tile" : "tiles"}`;
 
+  const notesFor = noteDuplicates();
   const fragment = document.createDocumentFragment();
-  tiles.forEach(tile => fragment.appendChild(buildRow(tile)));
+
+  tiles.forEach(tile => {
+    const pageTiles = CustomTiles.getCustomTiles(tile.page).sort(CustomTiles.compareTiles);
+    const position = pageTiles.findIndex(candidate => candidate.id === tile.id);
+
+    fragment.appendChild(buildRow(tile, position, pageTiles.length, notesFor(tile)));
+  });
+
   list.appendChild(fragment);
 }
 

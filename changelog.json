@@ -1,7 +1,12 @@
 {
     "release_date": "2026-10-27",
     "changes": [
-        "2.2.0:",
+        "2.3.0:",
+        "Added tile reordering in the custom tiles manager.",
+        "Added icon uploads, resized to 50x50 and stored on this device.",
+        "Added a warning when a custom tile repeats the URL of another tile.",
+        "Improved custom tiles by showing them first in the grid, in your chosen order.",
+        "Previous:",
         "Added custom tiles: add your own apps and admin portals with a label, URL and icon.",
         "Added a management page, Settings > Manage custom tiles, to edit and delete custom tiles.",
         "Added tile matching for custom tiles: any page on the site, the exact URL, or your own wildcard patterns.",
