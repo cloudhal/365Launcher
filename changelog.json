@@ -1,7 +1,9 @@
 {
     "release_date": "2026-10-27",
     "changes": [
-        "2.5.2:",
+        "2.6.0:",
+        "Added a Reset button in Settings that clears your settings, custom tiles, hidden tiles and uploaded icons.",
+        "Previous:",
         "Fixed the settings panel being cut off when the popup is short, so every setting stays reachable.",
         "Previous:",
         "Improved the built-in tiles control into a Hide all / Show all toggle whose label follows your selection.",

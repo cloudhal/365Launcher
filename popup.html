@@ -162,6 +162,19 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
           </button>
         </div>
       </div>
+      <div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50/70 px-3 py-3 dark:border-rose-500/40 dark:bg-rose-500/10">
+        <p class="text-sm font-medium text-rose-700 dark:text-rose-200">Reset 365 Launcher</p>
+        <p class="mt-1 text-xs leading-relaxed text-rose-600/90 dark:text-rose-200/80">
+          Clears your settings, custom tiles, hidden tiles and uploaded icons on this device and in your
+          synced Chrome profile.
+        </p>
+        <button type="button" id="reset-settings" class="panel-button-danger mt-2 w-full">Reset…</button>
+        <div id="reset-confirm" class="mt-2 hidden flex gap-2">
+          <button type="button" id="reset-cancel" class="panel-button-secondary flex-1">Cancel</button>
+          <button type="button" id="reset-confirm-button" class="panel-button-danger flex-1">Reset everything</button>
+        </div>
+        <p id="reset-status" role="status" aria-live="polite" class="mt-2 hidden text-xs font-medium text-rose-700 dark:text-rose-200"></p>
+      </div>
       <div class="mt-6 flex justify-end gap-2">
         <button type="button" class="panel-button-secondary" data-close-modal>Close</button>
         <button type="button" class="panel-button" id="save-settings">Save</button>

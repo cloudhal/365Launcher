@@ -476,6 +476,23 @@ const CustomTiles = (() => {
     await loadCustomTiles();
   }
 
+  // Wipes everything the extension stores: settings and tiles (synced) plus per-device state such as
+  // uploaded icons, then reloads the caches so callers can re-render.
+  async function resetAll() {
+    await Promise.all([
+      chrome.storage.sync.clear(),
+      chrome.storage.local.clear()
+    ]);
+
+    try {
+      localStorage.removeItem("theme");
+    } catch (error) {
+      // localStorage can be unavailable in some contexts; the synced theme is gone either way.
+    }
+
+    await loadCustomTiles();
+  }
+
   // ---- export / import --------------------------------------------------
 
   function normaliseLink(value) {
@@ -1058,6 +1075,7 @@ const CustomTiles = (() => {
     moveCustomTile,
     exportTiles,
     importTiles,
+    resetAll,
     openTileForm
   };
 })();

@@ -308,54 +308,39 @@ function showAppsPage(searchText = '') { // Show apps HTML
     adminPage.appendChild(fragment); // Append all icons at once for better performance
 }
 
-function togglePages() { // Toggle button to switch between Apps and Admin pages
+const APPS_ICON_PATH = 'M4.5 4.5h6v6h-6zm9 0h6v6h-6zm-9 9h6v6h-6zm9 0h6v6h-6z';
+const ADMIN_ICON_PATH = 'M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z';
 
-  // Get HTML elements for the switch button and pages
+// Shows either the Apps or the Admin grid and keeps the switch button in sync.
+function setAdminView(isAdmin) {
+  document.getElementById('switch-btn').setAttribute('aria-pressed', String(isAdmin));
+  document.getElementById('apps-page').classList.toggle('hidden', isAdmin);
+  document.getElementById('admin-page').classList.toggle('hidden', !isAdmin);
+  document.getElementById('switch-label').textContent = isAdmin ? 'Admin' : 'Apps';
+  document.getElementById('switch-icon-path').setAttribute('d', isAdmin ? ADMIN_ICON_PATH : APPS_ICON_PATH);
+}
+
+function togglePages() { // Toggle button to switch between Apps and Admin pages
     const switchButton = document.getElementById('switch-btn');
-    const switchIconPath = document.getElementById('switch-icon-path');
-    const switchLabel = document.getElementById('switch-label');
     const refreshButton = document.getElementById('refresh-btn');
-    const appsPage = document.getElementById('apps-page');
-    const adminPage = document.getElementById('admin-page');
-    const appsIconPath = 'M4.5 4.5h6v6h-6zm9 0h6v6h-6zm-9 9h6v6h-6zm9 0h6v6h-6z';
-    const adminIconPath = 'M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z';
     const setPressedState = (button, isPressed) => {
       button.setAttribute('aria-pressed', String(isPressed));
     };
-  
+
   // Load the switch state from chrome.storage
   chrome.storage.sync.get(["switchState", "debugMode", "refreshState"], (data) => {
-    const switchState = data.switchState || false; // Default to false if not set
-    const refreshState = data.refreshState || false; // Default to false if not set
-    setPressedState(switchButton, switchState);
-    setPressedState(refreshButton, refreshState); // Set the refresh button state
+    setPressedState(refreshButton, data.refreshState || false);
     debugMode = data.debugMode || false;
-    updatePages(switchState); // Update pages based on state
+    setAdminView(data.switchState || false);
   });
 
-    // Update pages based on the switch state
-    const updatePages = (isAdmin) => {
-      setPressedState(switchButton, isAdmin);
-      if (isAdmin) {
-        appsPage.classList.add('hidden');
-        adminPage.classList.remove('hidden');
-        switchLabel.textContent = 'Admin';
-        switchIconPath.setAttribute('d', adminIconPath);
-      } else {
-        adminPage.classList.add('hidden');
-        appsPage.classList.remove('hidden');
-        switchLabel.textContent = 'Apps';
-        switchIconPath.setAttribute('d', appsIconPath);
-      }
-    };
-  
     // Save switch state when toggled
     switchButton.addEventListener('click', () => {
       const isAdmin = switchButton.getAttribute('aria-pressed') !== 'true';
       chrome.storage.sync.set({ switchState: isAdmin }, () => {
         logEvent(`Admin switch state: ${isAdmin}`);
       });
-      updatePages(isAdmin);
+      setAdminView(isAdmin);
     });
 
     // Save refresh switch state when toggled
@@ -651,6 +636,12 @@ function showSettingsModal() {
     const debugModeToggle = document.getElementById('debug-mode');
     const manageTilesButton = document.getElementById('manage-tiles');
     const customTileCount = document.getElementById('custom-tile-count');
+    const resetButton = document.getElementById('reset-settings');
+    const resetConfirm = document.getElementById('reset-confirm');
+    const resetCancel = document.getElementById('reset-cancel');
+    const resetConfirmButton = document.getElementById('reset-confirm-button');
+    const resetStatus = document.getElementById('reset-status');
+    const refreshButton = document.getElementById('refresh-btn');
 
     const DEFAULT_SETTINGS = {
       theme: 'system',
@@ -660,12 +651,61 @@ function showSettingsModal() {
 
     const loadSettings = () => {
       chrome.storage.sync.get(DEFAULT_SETTINGS, data => {
-        themeSelect.value = data.theme;
-        tabModeSelect.value = data.tabMode;
-        debugModeToggle.checked = data.debugMode;
+        applyControls(data);
         applyTheme(data.theme);
       });
     };
+
+    const applyControls = settings => {
+      themeSelect.value = settings.theme;
+      tabModeSelect.value = settings.tabMode;
+      debugModeToggle.checked = settings.debugMode;
+    };
+
+    const showResetConfirmation = isConfirming => {
+      resetButton.classList.toggle('hidden', isConfirming);
+      resetConfirm.classList.toggle('hidden', !isConfirming);
+      resetStatus.classList.add('hidden');
+    };
+
+    resetButton.addEventListener('click', () => {
+      showResetConfirmation(true);
+      resetConfirmButton.focus();
+    });
+
+    resetCancel.addEventListener('click', () => {
+      showResetConfirmation(false);
+      resetButton.focus();
+    });
+
+    resetConfirmButton.addEventListener('click', async () => {
+      resetConfirmButton.disabled = true;
+
+      try {
+        await CustomTiles.resetAll();
+      } catch (error) {
+        console.error('Resetting 365 Launcher failed', error);
+        resetStatus.textContent = 'Reset failed. Try reloading the extension.';
+        resetStatus.classList.remove('hidden');
+        return;
+      } finally {
+        resetConfirmButton.disabled = false;
+      }
+
+      // Mirror the cleared storage in the current session
+      debugMode = DEFAULT_SETTINGS.debugMode;
+      activeTabMode = DEFAULT_SETTINGS.tabMode;
+      applyControls(DEFAULT_SETTINGS);
+      applyTheme(DEFAULT_SETTINGS.theme);
+      setAdminView(false);
+      refreshButton.setAttribute('aria-pressed', 'false');
+      updateCustomTileCount();
+      renderFilteredPages();
+
+      showResetConfirmation(false);
+      resetStatus.textContent = 'Everything has been reset.';
+      resetStatus.classList.remove('hidden');
+    });
 
     const updateCustomTileCount = () => {
       const custom = CustomTiles.getCustomTiles().length;

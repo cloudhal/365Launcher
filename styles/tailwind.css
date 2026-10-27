@@ -43,6 +43,14 @@
     @apply border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 focus:ring-offset-slate-950;
   }
 
+  .panel-button-danger {
+    @apply inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2;
+  }
+
+  :root[data-theme="dark"] .panel-button-danger {
+    @apply border-rose-500/40 bg-rose-500/10 text-rose-200 hover:border-rose-400/60 hover:bg-rose-500/20 focus:ring-offset-slate-950;
+  }
+
   .panel-select {
     @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400;
   }

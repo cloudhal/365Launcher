@@ -269,6 +269,13 @@ Selected in Settings, stored as `tabMode`, read by `initializeTabMode()`:
 `localStorage` (same extension origin, synchronous): `theme` — mirror of the `theme` setting used only
 by `theme-init.js` for the no-flash first paint.
 
+**Reset** (`CustomTiles.resetAll()`, wired to *Settings → Reset everything*) calls
+`chrome.storage.sync.clear()` and `chrome.storage.local.clear()`, removes the `localStorage` theme
+mirror, and reloads the caches. The dialog then mirrors the defaults into the open session
+(`activeTabMode`, `debugMode`, controls, `applyTheme`, `setAdminView(false)`, `refresh-btn` state and a
+re-render) so the popup looks reset without a reload. It is a two-step confirm (`#reset-settings` →
+`#reset-confirm`) and reports failures instead of pretending to succeed.
+
 `chrome.storage.local` (per-machine state / diagnostics):
 `customTileIcon:<id>` (uploaded 50x50 PNG data URLs), `myTabId` (single-tab-mode tab id),
 `alternativeURL` (last alternative pattern used for debugging),
