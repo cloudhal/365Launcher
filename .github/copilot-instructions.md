@@ -238,6 +238,10 @@ same load + render whenever a `customTile:` key changes.
   backdrop click and `[data-close-modal]` close it, and a document-level Escape handler closes the
   top-most open `.modal-shell[data-open="true"]` (the controller is stashed on the element as
   `__closeModal`). The custom tile form uses the same helper.
+- **Any new modal must be scrollable**: the popup window is only as tall as its content, so a short grid
+  makes tall dialogs overflow. Copy the About panel contract — `overflow-y-auto` on `.modal-shell` and
+  `my-4 max-h-[calc(100dvh-2rem)] overflow-y-auto` on the `[data-modal-panel]` child (About, Settings
+  and the custom tile form all do this).
 - Theme: [theme-init.js](../theme-init.js) runs in `<head>`, reads the `theme` value mirrored into
   `localStorage` by `applyTheme()`, and sets `data-theme` on `<html>` plus the `dark` class before first
   paint. `applyTheme()` then re-resolves `system` via `prefers-color-scheme` and rewrites both. Do not
