@@ -59,6 +59,8 @@ If you'd like to contribute or make improvements:
 
 For local UI work, install the dev dependency once with `npm install` and rebuild the popup stylesheet with `npm run build:css` after editing [styles/tailwind.css](styles/tailwind.css) or the popup markup.
 
+Architecture notes, storage keys, the tile data model, and a release checklist live in [.github/copilot-instructions.md](.github/copilot-instructions.md).
+
 ## License
 
 Copyright © 2026 Cloudrun Ltd

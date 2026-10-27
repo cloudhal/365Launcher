@@ -20,7 +20,9 @@ class IconItem {
   }
 
 // app icons
-// To test pattern matching in a regex tester, replace * with .* and escape forward slashes with \/ e.g. https:\/\/[^.-]+.sharepoint.com\/.*
+// Patterns are plain URLs with '*' wildcards; '.' and '?' always match literally, while character
+// classes such as [^.-] are passed through as regex. To test one in a regex tester, replace * with .*
+// e.g. https:\/\/[^.-]+\.sharepoint\.com\/.*
 // Any time you want to match using a * wildcard, set the type to 'pattern'
 // For icons, if no border is present, resize image to 44px using Photoshop or Photopea, then resize the canvas to 50 px to add some space
 const appIcons = [
@@ -114,6 +116,7 @@ function setResolvedTheme(theme) {
 }
 
 function applyTheme(theme) {
+  localStorage.setItem('theme', theme); // Read by theme-init.js before first paint
   let resolvedTheme = theme;
 
   if (theme === 'system') {
@@ -523,54 +526,63 @@ function isRefreshEnabled() {
   return document.getElementById('refresh-btn').getAttribute('aria-pressed') === 'true';
 }
 
+// Tab mode is cached so re-rendering tiles (e.g. on every search keystroke) does not re-read
+// chrome.storage.sync. Clicks are delegated from the page containers, so handlers survive
+// re-renders without ever being attached twice.
+let activeTabMode = 'individual';
+let tabModeListenerBound = false;
+
 function initializeTabMode() { // Initialize tab mode
-  const icons = document.querySelectorAll('.app-icon');
-  const iconItems = [...appIcons, ...adminIcons]; // Combine app and admin icons
+  if (tabModeListenerBound) {
+    return;
+  }
+  tabModeListenerBound = true;
+
+  ['apps-page', 'admin-page'].forEach(pageId => {
+    document.getElementById(pageId).addEventListener('click', handleIconClick);
+  });
 
   // Load the tab mode from chrome.storage
-  chrome.storage.sync.get(["tabMode"], (data) => {
-    const tabMode = data.tabMode || "individual"; // Default to "individual" if not set
+  chrome.storage.sync.get({ tabMode: "individual" }, (data) => {
+    activeTabMode = data.tabMode;
+  });
+}
 
-if (tabMode === "individual") {
-    // Individual tab mode: open each link in a new tab
-    icons.forEach(icon => {
-      icon.addEventListener('click', (event) => {
-          event.preventDefault(); // Prevent default behavior
-          logEvent("ClickedURL", icon.href );  // Save the clicked URL in chrome.storage for debugging
-          chrome.storage.local.remove("alternativeURL");
-          chrome.tabs.query({}, (tabs) => {
-              // Check if the clicked link matches any icon item
-              iconItems.forEach(item => {
-                  if (item.link === icon.href) { // found matching icon item
-                        openOrFocusTab(item.link, tabs, item); // Open or focus the tab
-                        return; // Stop further iterations once a match is found
-                  }
-              });
-          });
-      });
-  });
-} else if (tabMode === "single") {
-    // Single tab mode: open all links in the same single tab every time
-    icons.forEach(icon => {
-      icon.addEventListener('click', (event) => {
-          event.preventDefault(); // Prevent default behavior
-          const url = new URL(icon.href); // Parse the URL from the link
-          logEvent("ClickedURL", url.href );  // Save the clicked URL in chrome.storage for debugging
-          chrome.storage.local.remove("alternativeURL");
-          openOrUpdateSingleTab(url.href); // Open or update the single tab
-      });
-  });
-}
-else if (tabMode === "new") {
+function handleIconClick(event) {
+  const icon = event.target.closest('.app-icon');
+  if (!icon) {
+    return;
+  }
+
+  event.preventDefault(); // Prevent default behavior
+  const href = icon.href;
+
   // New tab mode: open all links in a new tab
-  icons.forEach(icon => {
-    icon.addEventListener('click', (event) => {
-        event.preventDefault(); // Prevent default behavior
-        chrome.tabs.create({ url: icon.href }); // Open the link in a new tab
-    });
-});
-}
-});
+  if (activeTabMode === 'new') {
+    chrome.tabs.create({ url: href });
+    return;
+  }
+
+  logEvent("ClickedURL", href); // Save the clicked URL in chrome.storage for debugging
+  chrome.storage.local.remove("alternativeURL");
+
+  // Single tab mode: open all links in the same single tab every time
+  if (activeTabMode === 'single') {
+    openOrUpdateSingleTab(href);
+    return;
+  }
+
+  // Individual tab mode: focus a matching tab if one is open, otherwise open the link
+  const item = [...appIcons, ...adminIcons].find(candidate => candidate.link === href);
+
+  if (!item) {
+    logEvent(`No matching icon item for ${href}`);
+    return;
+  }
+
+  chrome.tabs.query({}, (tabs) => {
+    openOrFocusTab(item.link, tabs, item);
+  });
 }
 
 // function to open or focus in a single tab every time (single tab mode)
@@ -599,8 +611,7 @@ function openOrUpdateSingleTab(url) {
           // Save the URL for debugging
           chrome.storage.local.remove("alternativeURL");
           logEvent("Found matching tab using exact match");
-          logEvent("url", url ); 
-          chrome.storage.local.remove({ alternativeURL});
+          logEvent("url", url );
         }
       });
     } else {
@@ -676,27 +687,31 @@ function openOrFocusTab(url, tabs, item) {
   }
 }
 
+// Convert a tile pattern into an anchored regex: '*' becomes '.*' and literal dots/question marks
+// are escaped so URLs are compared as written. Character classes (e.g. [^.-]) and quantifiers
+// (e.g. the '+' in [^.-]+) keep their regex meaning.
+function wildcardToRegExp(pattern) {
+  const source = pattern
+      .replace(/[.?]/g, '\\$&') // Match '.' and '?' literally
+      .replace(/\*/g, '.*'); // Replace '*' with '.*'
+
+  return new RegExp(`^${source}$`);
+}
+
 // Function to match wildcard patterns
 function matchPattern(pattern, url, alternativeLinks = []) {
-  // Convert wildcard (*) in the domain portion into a regex-friendly format
-  let regexPattern = pattern
-      .replace(/\*/g, '.*') // Replace '*' with '.*'
-      .replace(/\//g, '\\/');  // Escape forward slashes for regex
-  const regex = new RegExp(`^${regexPattern}$`);
   // Check primary pattern match
-  if (regex.test(url)) return true;
+  if (wildcardToRegExp(pattern).test(url)) return true;
 
   // Check alternative links
-  return alternativeLinks.some(alternative => {
-    chrome.storage.local.set({ alternativeURL: alternative }); // Save alternative link for debugging
-      let altRegexPattern = alternative
-          .replace(/\*/g, '.*') // Replace '*' with '.*'
-          .replace(/\//g, '\\/');  // Escape forward slashes for regex
-          // chrome.storage.local.set({ url: url }); // Save alternative regex pattern for debugging
-          // chrome.storage.local.set({ altRegexPattern: altRegexPattern }); // Save alternative regex pattern for debugging
-      // Check if the alternative link matches the URL
-      return new RegExp(`^${altRegexPattern}$`).test(url);
-  });
+  const matchingAlternative = alternativeLinks.find(alternative => wildcardToRegExp(alternative).test(url));
+
+  if (matchingAlternative) {
+    chrome.storage.local.set({ alternativeURL: matchingAlternative }); // Save alternative link for debugging
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -727,11 +742,14 @@ function showAboutModal() {
 
 
 // Share button actions
+// Share the public product page: window.location is the chrome-extension:// popup URL.
+const SHARE_URL = "https://cloudrun.co.uk/software/365launcher/";
+
 document.querySelectorAll('.share-btn').forEach(btn => {
   btn.addEventListener('click', function(e) {
     e.preventDefault();
     const platform = this.getAttribute('data-platform');
-    const url = encodeURIComponent(window.location.href);
+    const url = encodeURIComponent(SHARE_URL);
     const text = encodeURIComponent("Check out 365 Launcher - a great productivity tool!");
     
     let shareUrl;
@@ -749,6 +767,11 @@ document.querySelectorAll('.share-btn').forEach(btn => {
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
         break;
     }
+
+    if (!shareUrl) {
+      return;
+    }
+
     window.open(shareUrl, '_blank', 'width=600,height=400');
   });
 });
@@ -794,6 +817,7 @@ function showSettingsModal() {
       }
         chrome.storage.sync.set({ theme, debugMode, tabMode }, () => {
             console.log("✅ Settings saved:", { theme, debugMode, tabMode });
+            activeTabMode = tabMode; // Applied to the next tile click, no re-render needed
             applyTheme(theme); // Apply theme immediately
             settingsModal.closeModal();
         });

@@ -1,6 +1,6 @@
 {
-  "name": "365launcherx",
-  "version": "1.0.0",
+  "name": "365launcher",
+  "version": "2.1.2",
   "private": true,
   "description": "A lightweight, compact, launcher for Microsoft 365 apps and admin portals. Features different tab modes to minimise open tabs.",
   "main": "popup.js",
@@ -10,16 +10,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cloudhal/365LauncherX.git"
+    "url": "git+https://github.com/cloudhal/365Launcher.git"
   },
   "keywords": [],
   "author": "",
   "license": "MPL-2.0",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/cloudhal/365LauncherX/issues"
+    "url": "https://github.com/cloudhal/365Launcher/issues"
   },
-  "homepage": "https://github.com/cloudhal/365LauncherX#readme",
+  "homepage": "https://github.com/cloudhal/365Launcher#readme",
   "devDependencies": {
     "tailwindcss": "^3.4.17"
   }

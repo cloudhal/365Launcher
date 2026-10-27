@@ -1,14 +1,19 @@
 {
-    "release_date": "2026-05-11",
+    "release_date": "2026-10-27",
     "changes": [
-      "2.1.0:",
-      "Added status bar to show URLs on hover.",
-      "Previous:",
-      "Updated Outlook, Clipchamp links due to MS URL update.",
-      "Updated app icons.",
-      "Added Windows app tile.",
-      "Updated to use tailwind.css for styling. Added search feature.",
-      "Added keyboard shortcuts.",
-      "Fixed top-row icon hover/click hit area blocked by decorative header background."
+        "2.1.2:",
+        "Fixed tab matching for URLs containing dots and question marks.",
+        "Fixed share buttons linking to the extension page instead of the product page.",
+        "Improved tab mode handling so settings are read once instead of on every search keystroke.",
+        "Improved startup so the popup opens in the saved theme without flashing.",
+        "Updated package metadata, added a .gitignore and stopped tracking node_modules and .DS_Store.",
+        "Previous:",
+        "Added status bar to show URLs on hover.",
+        "Updated Outlook, Clipchamp links due to MS URL update.",
+        "Updated app icons.",
+        "Added Windows app tile.",
+        "Updated to use tailwind.css for styling. Added search feature.",
+        "Added keyboard shortcuts.",
+        "Fixed top-row icon hover/click hit area blocked by decorative header background."
     ]
-  }
+}
