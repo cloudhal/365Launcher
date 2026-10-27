@@ -154,14 +154,44 @@ New tiles reserve their id when the form opens (`formState.draftId`) so an uploa
 `customTileIcon:<id>` before the record exists. `handleSubmit` writes `storage.local` first, then the sync
 record, and rolls the icon back if the sync write fails.
 
+### Export / import
+
+`exportTiles()` builds a portable document; the options page turns it into a download
+(`Blob` + `URL.createObjectURL`, file named `365-launcher-tiles-YYYY-MM-DD.json`):
+
+```json
+{
+  "app": "365-launcher",
+  "schemaVersion": 1,
+  "exportedAt": "2026-10-27T16:00:00.000Z",
+  "tiles": [
+    { "text": "Contoso Wiki", "link": "https://contoso.sharepoint.com/sites/wiki",
+      "page": "apps", "matchMode": "site", "icon": { "kind": "letter" } }
+  ]
+}
+```
+
+- `icon.kind` is `letter` | `bundled` (`path`) | `url` (`url`) | `embedded` (`data`, a 50x50 PNG data
+  URL). Uploaded icons are embedded so a file moves between machines; they are re-stored in
+  `storage.local` under the importing tile's new id.
+- `patterns` is present only for `matchMode: "pattern"` (for `site`/`exact` the rules are re-derived).
+  Derived `matchType`/`alternativeLinks` are deliberately **not** exported.
+- Array order is the display order (page-grouped, then `order`); `order` itself is not exported and
+  imported tiles are appended to their page.
+- `importTiles(jsonText)` never overwrites: every accepted tile gets a fresh id, and entries whose
+  page + normalised link already exist are skipped, so importing the same file twice is a no-op. It
+  enforces the same `MAX_TILES` cap and returns `{ ok, imported, skipped, errors }`; malformed JSON,
+  a missing `tiles` array, and a `schemaVersion` newer than `EXPORT_SCHEMA_VERSION` are fatal errors.
+  If a future schema needs migrating, bump `EXPORT_SCHEMA_VERSION` and convert older documents there.
+
 ### Options page
 
 [options.html](../options.html) is registered as `options_ui` with `open_in_tab: true` and is reached from
 Settings → *Manage custom tiles* (`chrome.runtime.openOptionsPage()`). It lists tiles grouped by page in
 display order, with ↑/↓ reorder, edit, delete and a duplicate note (same URL as a built-in or as another
-custom tile). `deleteCustomTile()` removes both the synced record and its local icon. The page re-renders
-on `chrome.storage.onChanged`. Delete uses `window.confirm`. Anything that needs room (import/export)
-belongs here rather than in the 660 px popup.
+custom tile), plus a *Backup* panel for export/import. `deleteCustomTile()` removes both the synced record
+and its local icon. The page re-renders on `chrome.storage.onChanged`. Delete uses `window.confirm`.
+Anything that needs room belongs here rather than in the 660 px popup.
 
 ## Runtime flow
 

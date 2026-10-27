@@ -1,7 +1,10 @@
 {
     "release_date": "2026-10-27",
     "changes": [
-        "2.3.0:",
+        "2.4.0:",
+        "Added export and import of custom tiles as a JSON file, including uploaded icons.",
+        "Added clear messages when an import file is invalid or was created by a newer version.",
+        "Previous:",
         "Added tile reordering in the custom tiles manager.",
         "Added icon uploads, resized to 50x50 and stored on this device.",
         "Added a warning when a custom tile repeats the URL of another tile.",

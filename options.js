@@ -155,6 +155,75 @@ function renderList() {
   list.appendChild(fragment);
 }
 
+function showBackupStatus(message, isError = false) {
+  const status = document.getElementById("backup-status");
+
+  status.textContent = message;
+  status.className = isError
+    ? "mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200"
+    : "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100";
+}
+
+function describeImport(result) {
+  if (!result.ok) {
+    return result.errors.join(" ");
+  }
+
+  const parts = [`Imported ${result.imported} ${result.imported === 1 ? "tile" : "tiles"}`];
+
+  if (result.skipped > 0) {
+    parts.push(`skipped ${result.skipped}`);
+  }
+
+  const summary = `${parts.join(", ")}.`;
+
+  return result.errors.length > 0 ? `${summary} ${result.errors.join(" ")}` : summary;
+}
+
+function downloadExport() {
+  const payload = CustomTiles.exportTiles();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `365-launcher-tiles-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  showBackupStatus(`Exported ${payload.tiles.length} ${payload.tiles.length === 1 ? "tile" : "tiles"}.`);
+}
+
+async function handleImportFile() {
+  const input = document.getElementById("import-file");
+  const file = input.files && input.files[0];
+
+  if (!file) return;
+
+  try {
+    const result = await CustomTiles.importTiles(await file.text());
+
+    renderList();
+    showBackupStatus(describeImport(result), !result.ok);
+  } catch (error) {
+    console.error("Importing custom tiles failed", error);
+    showBackupStatus("That file could not be read.", true);
+  }
+}
+
+document.getElementById("export-tiles").addEventListener("click", downloadExport);
+
+document.getElementById("import-tiles").addEventListener("click", () => {
+  const input = document.getElementById("import-file");
+
+  input.value = ""; // Allow re-selecting the same file
+  input.click();
+});
+
+document.getElementById("import-file").addEventListener("change", handleImportFile);
+
 function refresh() {
   CustomTiles.loadCustomTiles()
     .then(renderList)

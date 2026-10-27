@@ -24,6 +24,8 @@ const CustomTiles = (() => {
   const ICON_SIZE = 50;
   const PAGES = ["apps", "admin"];
   const MATCH_MODES = ["site", "exact", "pattern"];
+  const EXPORT_APP = "365-launcher";
+  const EXPORT_SCHEMA_VERSION = 1;
   const AVATAR_COLOURS = ["#0284c7", "#4f46e5", "#7c3aed", "#db2777", "#ea580c", "#059669", "#0d9488", "#d97706"];
 
   let cachedTiles = [];
@@ -411,6 +413,149 @@ const CustomTiles = (() => {
     await chrome.storage.sync.remove(SYNC_PREFIX + id);
     await chrome.storage.local.remove(LOCAL_ICON_PREFIX + id);
     await loadCustomTiles();
+  }
+
+  // ---- export / import --------------------------------------------------
+
+  function normaliseLink(value) {
+    return isHttpUrl(value) ? new URL(value).href : "";
+  }
+
+  function iconToExport(image) {
+    if (image.startsWith(STORAGE_ICON_PREFIX)) {
+      const data = iconCache.get(image.slice(STORAGE_ICON_PREFIX.length));
+      return data ? { kind: "embedded", data } : { kind: "letter" };
+    }
+
+    if (/^icons\/[\w.-]+\.png$/.test(image)) return { kind: "bundled", path: image };
+    if (isHttpUrl(image)) return { kind: "url", url: image };
+
+    return { kind: "letter" };
+  }
+
+  function tileToExport(tile) {
+    const record = {
+      text: tile.text,
+      link: tile.link,
+      page: tile.page,
+      matchMode: tile.matchMode,
+      icon: iconToExport(String(tile.image || ""))
+    };
+
+    // For 'pattern' the alternatives *are* the user's patterns; 'site' and 'exact' re-derive theirs.
+    if (tile.matchMode === "pattern") {
+      record.patterns = [...tile.alternativeLinks];
+    }
+
+    return record;
+  }
+
+  // Tiles are exported page by page in display order; array order carries the ordering on import.
+  function exportTiles() {
+    const tiles = PAGES.flatMap(page => getCustomTiles(page).sort(compareTiles)).map(tileToExport);
+
+    return {
+      app: EXPORT_APP,
+      schemaVersion: EXPORT_SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      tiles
+    };
+  }
+
+  function iconToInput(icon) {
+    const record = icon && typeof icon === "object" ? icon : {};
+
+    if (record.kind === "bundled" && /^icons\/[\w.-]+\.png$/.test(String(record.path || ""))) {
+      return { iconKind: "bundled", bundledIcon: String(record.path) };
+    }
+
+    if (record.kind === "url" && isHttpUrl(record.url)) {
+      return { iconKind: "url", iconUrl: String(record.url) };
+    }
+
+    if (record.kind === "embedded" && /^data:image\/(png|jpeg|webp|gif);base64,/.test(String(record.data || ""))) {
+      return { iconKind: "upload", iconData: String(record.data) };
+    }
+
+    return { iconKind: "letter" };
+  }
+
+  // Imports never overwrite: every accepted tile gets a new id and tiles whose page + link already
+  // exist are skipped, so importing the same file twice is a no-op.
+  async function importTiles(jsonText) {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(String(jsonText || ""));
+    } catch (error) {
+      return { ok: false, imported: 0, skipped: 0, errors: ["That file is not valid JSON."] };
+    }
+
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.tiles)) {
+      return { ok: false, imported: 0, skipped: 0, errors: ["That file does not contain a 365 Launcher tile export."] };
+    }
+
+    const version = Number.isFinite(parsed.schemaVersion) ? parsed.schemaVersion : 1;
+
+    if (version > EXPORT_SCHEMA_VERSION) {
+      return {
+        ok: false,
+        imported: 0,
+        skipped: 0,
+        errors: [`That export uses schema ${version}, which this version of 365 Launcher cannot read.`]
+      };
+    }
+
+    const errors = [];
+    const seen = new Set(cachedTiles.map(tile => `${tile.page}|${tile.link}`));
+    let imported = 0;
+    let skipped = 0;
+
+    for (const entry of parsed.tiles) {
+      if (!entry || typeof entry !== "object") {
+        skipped += 1;
+        continue;
+      }
+
+      const page = PAGES.includes(entry.page) ? entry.page : "apps";
+      const link = normaliseLink(entry.link);
+
+      if (!link) {
+        skipped += 1;
+        errors.push(`Skipped "${String(entry.text || "untitled")}": the URL is not valid.`);
+        continue;
+      }
+
+      if (seen.has(`${page}|${link}`)) {
+        skipped += 1;
+        continue;
+      }
+
+      if (cachedTiles.length >= MAX_TILES) {
+        skipped += parsed.tiles.length - imported - skipped;
+        errors.push(`Stopped early: the ${MAX_TILES} tile limit was reached.`);
+        break;
+      }
+
+      const result = await saveCustomTile({
+        text: entry.text,
+        link,
+        page,
+        matchMode: entry.matchMode,
+        patterns: Array.isArray(entry.patterns) ? entry.patterns.map(String).join("\n") : "",
+        ...iconToInput(entry.icon)
+      });
+
+      if (result.ok) {
+        imported += 1;
+        seen.add(`${page}|${link}`);
+      } else {
+        skipped += 1;
+        errors.push(...result.errors.map(error => `"${String(entry.text || "untitled")}": ${error}`));
+      }
+    }
+
+    return { ok: true, imported, skipped, errors };
   }
 
   // Single source of truth for tile markup; user-supplied text is always set via textContent.
@@ -844,6 +989,8 @@ const CustomTiles = (() => {
     saveCustomTile,
     deleteCustomTile,
     moveCustomTile,
+    exportTiles,
+    importTiles,
     openTileForm
   };
 })();
