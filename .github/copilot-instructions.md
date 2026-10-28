@@ -140,8 +140,10 @@ One `chrome.storage.sync` key per tile, prefix `customTile:`:
   `item.link === icon.href` comparison for built-ins (an `<a href>` normalises `https://x` to
   `https://x/`, so custom links are normalised on save for the same reason).
 - A `+` tile (`[data-add-tile]`, `buildAddTileButton()`) is appended to each grid when no search is
-  active and opens the add form. It is gated by the `showAddTile` setting (Settings → *Show the Add tile
-  button*, default on): the module-level `showAddTile` flag is read while rendering, `loadSettings()`
+  active and opens the add form. Every Settings control — including this one — is **staged until Save**,
+  so the row carries a "Takes effect when you press Save." hint; the options-page toggles by contrast
+  apply immediately. It is gated by the `showAddTile` setting (Settings → *Show the Add tile button*,
+  default on): the module-level `showAddTile` flag is read while rendering, `loadSettings()`
   applies the stored value on startup via `syncAddTileVisibility()` (re-rendering only when it changes),
   and the `storage.onChanged` handler keeps other windows in step. With it off, the options page remains
   the only way to add a tile.

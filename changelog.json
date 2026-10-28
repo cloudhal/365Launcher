@@ -1,7 +1,9 @@
 {
     "release_date": "2026-10-28",
     "changes": [
-        "2.7.0:",
+        "2.7.1:",
+        "Improved the Add tile button setting with a note that it applies when you press Save.",
+        "Previous:",
         "Added a setting to show or hide the Add tile button.",
         "Previous:",
         "Added a Reset button in Settings that clears your settings, custom tiles, hidden tiles and uploaded icons.",
