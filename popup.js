@@ -35,6 +35,7 @@ fetch(chrome.runtime.getURL("changelog.json"))
   });
 // Debug mode
 let debugMode;
+let showAddTile = true;
 let activeSearchText = '';
 
 function setResolvedTheme(theme) {
@@ -196,6 +197,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && Object.keys(changes).some(CustomTiles.isConfigKey)) {
+    if (changes.showAddTile) {
+      showAddTile = changes.showAddTile.newValue !== false;
+    }
+
     CustomTiles.loadCustomTiles()
       .then(renderFilteredPages)
       .catch(error => console.error('Refreshing custom tiles failed', error));
@@ -280,7 +285,7 @@ function showAppsPage(searchText = '') { // Show apps HTML
     }
 
     // Keep the add tile reachable even when every tile is hidden or filtered out.
-    if (!searchText.trim()) {
+    if (showAddTile && !searchText.trim()) {
       fragment.appendChild(buildAddTileButton('apps'));
     }
 
@@ -301,7 +306,7 @@ function showAppsPage(searchText = '') { // Show apps HTML
     }
 
     // Keep the add tile reachable even when every tile is hidden or filtered out.
-    if (!searchText.trim()) {
+    if (showAddTile && !searchText.trim()) {
       fragment.appendChild(buildAddTileButton('admin'));
     }
 
@@ -634,6 +639,7 @@ function showSettingsModal() {
     const themeSelect = document.getElementById('theme');
     const tabModeSelect = document.getElementById('tab-mode');
     const debugModeToggle = document.getElementById('debug-mode');
+    const showAddTileToggle = document.getElementById('show-add-tile');
     const manageTilesButton = document.getElementById('manage-tiles');
     const customTileCount = document.getElementById('custom-tile-count');
     const resetButton = document.getElementById('reset-settings');
@@ -646,13 +652,25 @@ function showSettingsModal() {
     const DEFAULT_SETTINGS = {
       theme: 'system',
       debugMode: false,
-      tabMode: 'individual'
+      tabMode: 'individual',
+      showAddTile: true
+    };
+
+    // Applies the saved visibility to the grids, re-rendering only when it actually changes.
+    const syncAddTileVisibility = value => {
+      const next = value !== false;
+
+      if (next === showAddTile) return;
+
+      showAddTile = next;
+      renderFilteredPages();
     };
 
     const loadSettings = () => {
       chrome.storage.sync.get(DEFAULT_SETTINGS, data => {
         applyControls(data);
         applyTheme(data.theme);
+        syncAddTileVisibility(data.showAddTile);
       });
     };
 
@@ -660,6 +678,7 @@ function showSettingsModal() {
       themeSelect.value = settings.theme;
       tabModeSelect.value = settings.tabMode;
       debugModeToggle.checked = settings.debugMode;
+      showAddTileToggle.checked = settings.showAddTile;
     };
 
     const showResetConfirmation = isConfirming => {
@@ -694,6 +713,7 @@ function showSettingsModal() {
 
       // Mirror the cleared storage in the current session
       debugMode = DEFAULT_SETTINGS.debugMode;
+      showAddTile = DEFAULT_SETTINGS.showAddTile;
       activeTabMode = DEFAULT_SETTINGS.tabMode;
       applyControls(DEFAULT_SETTINGS);
       applyTheme(DEFAULT_SETTINGS.theme);
@@ -734,16 +754,18 @@ function showSettingsModal() {
       const tabMode = tabModeSelect.value;  
       const theme = themeSelect.value;
       debugMode = debugModeToggle.checked;
+      showAddTile = showAddTileToggle.checked;
       if (debugMode) {
           console.log("🛠 Debug mode enabled! Logging events...");
       }
       else {
         console.log("🛠 Debug mode disabled");
       }
-        chrome.storage.sync.set({ theme, debugMode, tabMode }, () => {
-            console.log("✅ Settings saved:", { theme, debugMode, tabMode });
+        chrome.storage.sync.set({ theme, debugMode, tabMode, showAddTile }, () => {
+            console.log("✅ Settings saved:", { theme, debugMode, tabMode, showAddTile });
             activeTabMode = tabMode; // Applied to the next tile click, no re-render needed
             applyTheme(theme); // Apply theme immediately
+            renderFilteredPages(); // Add tile visibility may have changed
             settingsModal.closeModal();
         });
     });
