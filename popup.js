@@ -635,7 +635,6 @@ document.querySelectorAll('.share-btn').forEach(btn => {
 function showSettingsModal() {
     const settingsIcon = document.getElementById('settings-icon');
     const settingsModal = UI.createModalController('settings-modal');
-    const saveSettings = document.getElementById('save-settings');
     const themeSelect = document.getElementById('theme');
     const tabModeSelect = document.getElementById('tab-mode');
     const debugModeToggle = document.getElementById('debug-mode');
@@ -750,24 +749,38 @@ function showSettingsModal() {
       settingsModal.openModal(settingsIcon);
     });
 
-    saveSettings.addEventListener('click', () => {
-      const tabMode = tabModeSelect.value;  
-      const theme = themeSelect.value;
+    // Every control applies and persists as soon as it changes; there is no Save step.
+    const persistSetting = (values, label) => {
+      chrome.storage.sync.set(values, () => {
+        if (chrome.runtime.lastError) {
+          console.error(`Storing ${label} failed`, chrome.runtime.lastError);
+          return;
+        }
+
+        logEvent(`${label}: ${Object.values(values).join(', ')}`);
+      });
+    };
+
+    tabModeSelect.addEventListener('change', () => {
+      activeTabMode = tabModeSelect.value; // Applied to the next tile click
+      persistSetting({ tabMode: activeTabMode }, 'Tab mode');
+    });
+
+    themeSelect.addEventListener('change', () => {
+      applyTheme(themeSelect.value);
+      persistSetting({ theme: themeSelect.value }, 'Theme');
+    });
+
+    debugModeToggle.addEventListener('change', () => {
       debugMode = debugModeToggle.checked;
+      console.log(debugMode ? "🛠 Debug mode enabled! Logging events..." : "🛠 Debug mode disabled");
+      persistSetting({ debugMode }, 'Debug mode');
+    });
+
+    showAddTileToggle.addEventListener('change', () => {
       showAddTile = showAddTileToggle.checked;
-      if (debugMode) {
-          console.log("🛠 Debug mode enabled! Logging events...");
-      }
-      else {
-        console.log("🛠 Debug mode disabled");
-      }
-        chrome.storage.sync.set({ theme, debugMode, tabMode, showAddTile }, () => {
-            console.log("✅ Settings saved:", { theme, debugMode, tabMode, showAddTile });
-            activeTabMode = tabMode; // Applied to the next tile click, no re-render needed
-            applyTheme(theme); // Apply theme immediately
-            renderFilteredPages(); // Add tile visibility may have changed
-            settingsModal.closeModal();
-        });
+      renderFilteredPages();
+      persistSetting({ showAddTile }, 'Add tile visibility');
     });
 
     loadSettings();

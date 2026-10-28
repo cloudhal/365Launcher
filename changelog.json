@@ -1,7 +1,10 @@
 {
     "release_date": "2026-10-28",
     "changes": [
-        "2.7.1:",
+        "2.8.0:",
+        "Improved settings so tab mode, theme, debug mode and the Add tile button apply immediately.",
+        "Updated the settings panel to remove the Save button, so changes are never lost by closing it.",
+        "Previous:",
         "Improved the Add tile button setting with a note that it applies when you press Save.",
         "Previous:",
         "Added a setting to show or hide the Add tile button.",

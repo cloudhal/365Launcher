@@ -140,10 +140,8 @@ One `chrome.storage.sync` key per tile, prefix `customTile:`:
   `item.link === icon.href` comparison for built-ins (an `<a href>` normalises `https://x` to
   `https://x/`, so custom links are normalised on save for the same reason).
 - A `+` tile (`[data-add-tile]`, `buildAddTileButton()`) is appended to each grid when no search is
-  active and opens the add form. Every Settings control — including this one — is **staged until Save**,
-  so the row carries a "Takes effect when you press Save." hint; the options-page toggles by contrast
-  apply immediately. It is gated by the `showAddTile` setting (Settings → *Show the Add tile button*,
-  default on): the module-level `showAddTile` flag is read while rendering, `loadSettings()`
+  active and opens the add form. It is gated by the `showAddTile` setting (Settings → *Show the Add tile
+  button*, default on): the module-level `showAddTile` flag is read while rendering, `loadSettings()`
   applies the stored value on startup via `syncAddTileVisibility()` (re-rendering only when it changes),
   and the `storage.onChanged` handler keeps other windows in step. With it off, the options page remains
   the only way to add a tile.
@@ -238,6 +236,11 @@ same load + render whenever a `customTile:` key changes.
   storage and handlers are never attached twice.
 - `togglePages()` reads `switchState`/`debugMode`/`refreshState`, wires the Apps/Admin switch (icon path +
   label swap) and the Refresh toggle, and mirrors all three to `chrome.storage.sync`.
+- **Settings apply immediately — there is no Save button.** Each control in `showSettingsModal()` writes
+  through a single `persistSetting(values, label)` helper on its `change` event, updates the in-memory
+  state the renderer uses (`activeTabMode`, `debugMode`, `showAddTile`), and applies visible effects at
+  once (`applyTheme()`, `renderFilteredPages()`). `loadSettings()`/`applyControls()` only seed the
+  controls when the dialog opens. Keep this pattern for new settings: never reintroduce a staged Save.
 - Every tile is an `<a href target="_blank">`; each tab mode calls `event.preventDefault()` and drives
   `chrome.tabs` itself.
 - Modals use `UI.createModalController()` ([ui.js](../ui.js)): focus trap on Tab, restore focus on close,
